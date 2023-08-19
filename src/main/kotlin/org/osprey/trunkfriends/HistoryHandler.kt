@@ -2,18 +2,22 @@ package org.osprey.trunkfriends
 
 import java.io.File
 
-class HistoryFetcher {
+class HistoryHandler {
 
     fun readHistory() : List<Pair<CurrentUser,String>> {
         val history = mutableListOf<Pair<CurrentUser,String>>()
-        File("datafile.dmp").readLines().forEach {
-            val stra = it.substring(0,it.indexOf("-")+3)
-            val strb = it.substring(it.indexOf("-")+3, it.length)
-            val user = mapper.readValue(
-                strb,
-                CurrentUser::class.java
-            )
-            history.add(Pair(user, stra))
+
+        val file = File("datafile.dmp")
+        if (file.exists()) {
+            file.readLines().forEach {
+                val stra = it.substring(0, it.indexOf("-") + 3)
+                val strb = it.substring(it.indexOf("-") + 3, it.length)
+                val user = mapper.readValue(
+                    strb,
+                    CurrentUser::class.java
+                )
+                history.add(Pair(user, stra))
+            }
         }
         return history
     }
@@ -27,7 +31,7 @@ class HistoryFetcher {
         fun historyLine(userObject : CurrentUser) {
             val fi = if (userObject.follower) "1" else "*"
             val fo = if (userObject.following) "1" else "*"
-            val ctrString = "$timestamp-$fi$fo"+mapper.writeValueAsString(userObject)
+            val ctrString = "$timestamp-$fi$fo"
             newHistoryLines.add(Pair(userObject,ctrString))
         }
 
@@ -65,13 +69,11 @@ class HistoryFetcher {
             it.first.acct to it.first
         }
 
-    fun writeHistory(currentUsers : Map<String, CurrentUser>)  {
+    fun writeHistory(historyLines : List<Pair<CurrentUser, String>>)  {
         File("datafile.dmp").renameTo(File("datafile.dmp.${System.currentTimeMillis()}"))
         File("datafile.dmp").printWriter().use { pw ->
-            currentUsers.forEach {
-                val fi = if (it.value.follower) "1" else "*"
-                val fo = if (it.value.following) "1" else "*"
-                pw.println("$timestamp-$fi$fo"+mapper.writeValueAsString(it.value))
+            historyLines.forEach {
+                pw.println(it.second+mapper.writeValueAsString(it.first))
             }
         }
     }
