@@ -1,33 +1,35 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-	id("org.springframework.boot") version "3.1.2"
-	id("io.spring.dependency-management") version "1.1.2"
-	kotlin("jvm") version "1.8.22"
-	kotlin("plugin.spring") version "1.8.22"
+    kotlin("jvm")
+    id("org.jetbrains.compose")
 }
 
-group = "org.osprey"
-version = "0.0.1-SNAPSHOT"
-
-java {
-	sourceCompatibility = JavaVersion.VERSION_17
-}
+group = "com.osprey"
+version = "1.0-SNAPSHOT"
 
 repositories {
-	mavenCentral()
+    mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    google()
 }
 
 dependencies {
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(compose.desktop.currentOs)
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
 }
 
-tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		freeCompilerArgs += "-Xjsr305=strict"
-		jvmTarget = "17"
-	}
+compose.desktop {
+    application {
+        mainClass = "TrunkUIKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Trunkfriends"
+            packageVersion = "1.0.0"
+        }
+    }
 }
 
 tasks.withType<Test> {
