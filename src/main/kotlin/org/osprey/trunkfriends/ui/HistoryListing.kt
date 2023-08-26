@@ -17,7 +17,9 @@ import org.osprey.trunkfriends.historyhandler.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryCard
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.*
 
 @Composable
 fun HistoryListing() {
@@ -64,13 +66,15 @@ fun HistoryListing() {
                     .padding(4.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
-                val date = DateTimeFormatter.ISO_INSTANT
+                val date = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                    .withLocale(Locale.GERMAN )
+                    .withZone(ZoneId.of("CET"))
                     .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
-                        FancyCard(text = "($date) Account: "+it.acct + " "+it.username)
+                        FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
+                        FancyCard(date, it.acct, it.username)
                     }
-                    FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
                 }
             }
         }
@@ -78,16 +82,19 @@ fun HistoryListing() {
 }
 
 @Composable
-fun FancyCard(text: String) {
+fun FancyCard(date: String, account: String, username: String) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
             width = 1.dp,
             color = Color.LightGray
         ),
-        modifier = Modifier.padding(Dp(4F))
+        modifier = Modifier.padding(Dp(4F)).width(670.dp)
     ) {
-        Text(text = text)
+        Column {
+            Text(text = "⏰ $date - $username")
+            Text(text = "\uD83D\uDCE9 $account")
+        }
     }
 
 }
@@ -100,25 +107,22 @@ fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean,
             width = 1.dp,
             color = Color.LightGray
         ),
-        modifier = Modifier.padding(Dp(4F))
+        modifier = Modifier.padding(Dp(4F)).width(100.dp)
     ) {
-        Row {
-            Text("They follow you :")
-            if (prevFollower != follower) {
-                if (follower) Text("(x ->)", color = Color.Black) else Text("(✓ ->)", color = Color.Blue)
-            }
-            if (follower) Text("✓", color = Color.Blue) else Text("x", color = Color.Red)
-            Text("   You follow them :")
-            if (prevFollowing != following) {
-                if (following) Text("(x ->)", color = Color.Black) else Text("(✓ ->)", color = Color.Blue)
-            }
-            if (following) Text("✓", color = Color.Blue) else Text("x", color = Color.Red)
-            if (prevFollower != follower || prevFollowing != following) {
-                Card(
-                    backgroundColor = Color.Cyan
-                ) {
-                    Text("<->", color = Color.Magenta)
+        Column {
+            Row {
+                Text("\uD83E\uDEF5")
+                if (prevFollower != follower) {
+                    if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
                 }
+                if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
+            }
+            Row {
+                Text("\uD83D\uDC49")
+                if (prevFollowing != following) {
+                    if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
+                }
+                if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
             }
         }
     }
