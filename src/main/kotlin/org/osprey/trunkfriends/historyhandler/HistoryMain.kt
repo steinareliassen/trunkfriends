@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends
+package org.osprey.trunkfriends.historyhandler
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -25,6 +25,5 @@ fun main() {
 
     // Create and write new history
     val newHistory = historyHandler.createNewHistory(latestHistory, currentUsers) // Compare previous run to current run and create new history lines
-    println(newHistory.size)
     historyHandler.writeHistory(history + newHistory) // write out old and new history combined
 }

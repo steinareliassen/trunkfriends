@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends
+package org.osprey.trunkfriends.historyhandler
 
 import java.io.File
 
@@ -52,7 +52,9 @@ class HistoryHandler {
             }
         }
         // Check if any users have been removed
-        latestHistory.forEach {
+        latestHistory.filter {
+            it.value.follower || it.value.following // Filter out users already marked as removed.
+        }.forEach {
             if(!currentUsers.containsKey(it.key)) {
                 val unfollowed = it.value.copy(
                     following = false,
@@ -73,7 +75,7 @@ class HistoryHandler {
         File("datafile.dmp").renameTo(File("datafile.dmp.${System.currentTimeMillis()}"))
         File("datafile.dmp").printWriter().use { pw ->
             historyLines.forEach {
-                pw.println(it.second+mapper.writeValueAsString(it.first))
+                pw.println(it.second+ mapper.writeValueAsString(it.first))
             }
         }
     }

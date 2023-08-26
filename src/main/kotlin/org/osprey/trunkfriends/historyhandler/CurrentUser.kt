@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends
+package org.osprey.trunkfriends.historyhandler
 
 data class CurrentUser(
     val following: Boolean,

@@ -1,7 +1,9 @@
-package org.osprey.trunkfriends
+package org.osprey.trunkfriends.historyhandler
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.osprey.trunkfriends.bearer
+import org.osprey.trunkfriends.server
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -12,7 +14,7 @@ class UsersFromMastodonApi : CurrentUserFetcher {
 
     override fun getCurrentUsers() : Map<String, CurrentUser> {
         val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://mastodon.green/api/v1/accounts/verify_credentials"))
+            .uri(URI.create("https://$server/api/v1/accounts/verify_credentials"))
             .header("Authorization", bearer)
             .method("GET", HttpRequest.BodyPublishers.noBody())
             .build()
@@ -74,7 +76,7 @@ class UsersFromMastodonApi : CurrentUserFetcher {
         val request = HttpRequest.newBuilder()
             .uri(
                 URI.create(
-                    "https://mastodon.green/api/v1/accounts/${id}/$direction" +
+                    "https://$server/api/v1/accounts/${id}/$direction" +
                             if (start != 0L) "?max_id=$start" else ""
                 )
             )
