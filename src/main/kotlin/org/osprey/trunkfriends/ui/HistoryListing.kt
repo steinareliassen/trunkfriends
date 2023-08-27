@@ -13,8 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.osprey.trunkfriends.historyhandler.CurrentUser
-import org.osprey.trunkfriends.historyhandler.HistoryCard
+import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import java.time.Instant
 import java.time.ZoneId

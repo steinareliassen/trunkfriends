@@ -1,8 +1,12 @@
-package org.osprey.trunkfriends.historyhandler
+package org.osprey.trunkfriends.api.mastodon
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.osprey.trunkfriends.api.CurrentUser
+import org.osprey.trunkfriends.api.CurrentUserFetcher
+import org.osprey.trunkfriends.api.UserClass
 import org.osprey.trunkfriends.bearer
+import org.osprey.trunkfriends.historyhandler.*
 import org.osprey.trunkfriends.server
 import java.net.URI
 import java.net.http.HttpClient
@@ -11,6 +15,9 @@ import java.net.http.HttpResponse
 import kotlin.jvm.optionals.getOrNull
 
 class UsersFromMastodonApi : CurrentUserFetcher {
+
+    override fun getFollow(direction: String): List<UserClass> =
+        listOf()
 
     override fun getCurrentUsers() : Map<String, CurrentUser> {
         val request: HttpRequest = HttpRequest.newBuilder()
@@ -26,6 +33,7 @@ class UsersFromMastodonApi : CurrentUserFetcher {
             UserClass::class.java
         )
 
+        // TODO: Refactor similar code for following / followers
         val following = mutableListOf<UserClass>()
         var list = findUserPage(0, user.id ?: "empty", "following")
         following.addAll(list.first)
@@ -35,10 +43,10 @@ class UsersFromMastodonApi : CurrentUserFetcher {
         }
 
         val followers = mutableListOf<UserClass>()
-        list = findUserPage(0, user.id ?: "empty")
+        list = findUserPage(0, user.id ?: "empty", "followers")
         followers.addAll(list.first)
         while (list.second != 0L) {
-            list = findUserPage(list.second, user.id ?: "empty")
+            list = findUserPage(list.second, user.id ?: "empty", "followers")
             followers.addAll(list.first)
         }
 
@@ -72,7 +80,7 @@ class UsersFromMastodonApi : CurrentUserFetcher {
         return currentUsers
     }
 
-    fun findUserPage(start: Long, id: String, direction: String = "followers"): Pair<Array<UserClass>, Long> {
+    private fun findUserPage(start: Long, id: String, direction: String): Pair<Array<UserClass>, Long> {
         val request = HttpRequest.newBuilder()
             .uri(
                 URI.create(
@@ -94,9 +102,8 @@ class UsersFromMastodonApi : CurrentUserFetcher {
 
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
 
-        users.forEachIndexed { index, userClass ->
-            println("+$timestamp,${mapper.writeValueAsString(userClass)}")
-        }
+        println("* Fetched page")
+
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")
         val stopIndex = header.indexOf(">")

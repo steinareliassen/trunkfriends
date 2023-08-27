@@ -2,6 +2,7 @@ package org.osprey.trunkfriends.historyhandler
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.osprey.trunkfriends.api.mastodon.UsersFromMastodonApi
 
 val mapper = jacksonObjectMapper()
     .configure(
