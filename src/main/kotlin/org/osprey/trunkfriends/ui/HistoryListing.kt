@@ -1,11 +1,9 @@
 package org.osprey.trunkfriends.ui
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,7 +19,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
-fun HistoryListing() {
+fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -57,7 +55,7 @@ fun HistoryListing() {
                 }
             }
         }.forEach {
-            Card(
+            if (name == "" || name == it.acct) Card(
                 elevation = Dp(4F),
                 modifier = Modifier
                     .width(740.dp)
@@ -71,7 +69,7 @@ fun HistoryListing() {
                     .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
-                        FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
+                        FollowCard(it.acct, name, onNameChange, it.prevFollower, it.follower, it.prevFollowing, it.following)
                         FancyCard(date, it.acct, it.username)
                     }
                 }
@@ -99,7 +97,14 @@ fun FancyCard(date: String, account: String, username: String) {
 }
 
 @Composable
-fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
+fun OutlinedButtonExample(onClick: () -> Unit) {
+    OutlinedButton(onClick = { onClick() }) {
+        Text("Outlined")
+    }
+}
+
+@Composable
+fun FollowCard(account: String, name : String, onNameChange: (String) -> Unit, prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
@@ -110,6 +115,9 @@ fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean,
     ) {
         Column {
             Row {
+                OutlinedButtonExample {
+                    if (name == "") onNameChange(account) else onNameChange("")
+                }
                 Text("\uD83E\uDEF5")
                 if (prevFollower != follower) {
                     if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
