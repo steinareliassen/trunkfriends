@@ -1,6 +1,7 @@
 package org.osprey.trunkfriends.historyhandler
 
 import org.osprey.trunkfriends.api.CurrentUser
+import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
 class HistoryHandler {

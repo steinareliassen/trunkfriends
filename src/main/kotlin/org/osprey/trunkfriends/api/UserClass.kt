@@ -1,7 +1,11 @@
 package org.osprey.trunkfriends.api
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class UserClass(
-    val id: String? = null,
-    val acct: String? = null,
-    val username: String? = null
+    val id: String,
+    val acct: String,
+    val username: String,
+    @JsonProperty("display_name")
+    val displayName: String,
 )

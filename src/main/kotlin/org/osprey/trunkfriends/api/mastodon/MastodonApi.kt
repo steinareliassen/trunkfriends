@@ -3,76 +3,69 @@ package org.osprey.trunkfriends.api.mastodon
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.api.CurrentUserFetcher
+import org.osprey.trunkfriends.api.GenericHostInterface
 import org.osprey.trunkfriends.api.UserClass
 import org.osprey.trunkfriends.bearer
 import org.osprey.trunkfriends.historyhandler.*
 import org.osprey.trunkfriends.server
+import org.osprey.trunkfriends.util.mapper
+import java.lang.IllegalStateException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.jvm.optionals.getOrNull
 
-class UsersFromMastodonApi : CurrentUserFetcher {
+class MastodonApi : GenericHostInterface {
 
-    override fun getFollow(direction: String): List<UserClass> =
-        listOf()
-
-    override fun getCurrentUsers() : Map<String, CurrentUser> {
-        val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create("https://$server/api/v1/accounts/verify_credentials"))
-            .header("Authorization", bearer)
-            .method("GET", HttpRequest.BodyPublishers.noBody())
-            .build()
-
-        val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
-
-        val user = mapper.readValue(
-            response.body(),
+    override fun getUserId() =
+        mapper.readValue(
+            HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder()
+                    .uri(URI.create("https://$server/api/v1/accounts/verify_credentials"))
+                    .header("Authorization", bearer)
+                    .method("GET", HttpRequest.BodyPublishers.noBody())
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            ).body(),
             UserClass::class.java
-        )
+        ).id ?: throw IllegalStateException("Cannot extract userid")
 
-        // TODO: Refactor similar code for following / followers
-        val following = mutableListOf<UserClass>()
-        var list = findUserPage(0, user.id ?: "empty", "following")
-        following.addAll(list.first)
+    override fun getFollow(userId: String, direction: String): List<UserClass> {
+        val follow = mutableListOf<UserClass>()
+        var list = findUserPage(0, userId ?: "empty", direction)
+        follow.addAll(list.first)
         while (list.second != 0L) {
-            list = findUserPage(list.second, user.id ?: "empty", "following")
-            following.addAll(list.first)
+            list = findUserPage(list.second, userId ?: "empty", direction)
+            follow.addAll(list.first)
         }
+        return follow
+    }
 
-        val followers = mutableListOf<UserClass>()
-        list = findUserPage(0, user.id ?: "empty", "followers")
-        followers.addAll(list.first)
-        while (list.second != 0L) {
-            list = findUserPage(list.second, user.id ?: "empty", "followers")
-            followers.addAll(list.first)
-        }
+    override fun getCurrentUsers(following : List<UserClass>, followers : List<UserClass>) : Map<String, CurrentUser> {
 
         val currentUsers = mutableMapOf<String, CurrentUser>()
 
         followers.forEach {
-            currentUsers[it.acct ?: "empty"] = CurrentUser(
+            currentUsers[it.acct] = CurrentUser(
                 following = false,
                 follower = true,
-                it.acct ?: "empty",
-                it.username ?: "empty"
+                it.acct,
+                it.username
             )
         }
 
         following.forEach {
-            val acct = it.acct ?: "empty"
-            if (currentUsers.containsKey(acct)) {
-                currentUsers[acct] = currentUsers[acct]?.copy(
+            if (currentUsers.containsKey(it.acct)) {
+                currentUsers[it.acct] = currentUsers[it.acct]?.copy(
                     following = true
-                ) ?: throw java.lang.IllegalStateException("nope")
+                ) ?: throw IllegalStateException("nope")
             } else {
-                currentUsers[acct] = CurrentUser(
+                currentUsers[it.acct] = CurrentUser(
                     following = true,
                     follower = false,
-                    it.acct ?: "empty",
-                    it.username ?: "empty"
+                    it.acct,
+                    it.username
                 )
             }
         }
