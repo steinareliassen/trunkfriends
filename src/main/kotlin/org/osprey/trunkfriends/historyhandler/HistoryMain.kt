@@ -1,14 +1,12 @@
 package org.osprey.trunkfriends.historyhandler
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
 val timestamp = System.currentTimeMillis()
 
-fun main() {
+fun refresh() {
     // Set up fetchers
     val currentUserFetcher = MastodonApi()
     val historyHandler = HistoryHandler()
@@ -40,4 +38,8 @@ fun main() {
     val newHistory = historyHandler.createNewHistory(latestHistory, currentUsers) // Compare previous run to current run and create new history lines
     println(newHistory.size)
     historyHandler.writeHistory(history + newHistory) // write out old and new history combined
+}
+
+fun main() {
+    refresh()
 }

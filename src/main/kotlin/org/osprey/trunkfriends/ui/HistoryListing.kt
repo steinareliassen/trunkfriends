@@ -2,9 +2,7 @@ package org.osprey.trunkfriends.ui
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Card
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,8 +67,8 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
                     .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
-                        FollowCard(it.acct, name, onNameChange, it.prevFollower, it.follower, it.prevFollowing, it.following)
-                        FancyCard(date, it.acct, it.username)
+                        FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
+                        FancyCard(name, onNameChange, date, it.acct, it.username)
                     }
                 }
             }
@@ -79,7 +77,7 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
 }
 
 @Composable
-fun FancyCard(date: String, account: String, username: String) {
+fun FancyCard(name : String, onNameChange: (String) -> Unit, date: String, account: String, username: String) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
@@ -90,21 +88,31 @@ fun FancyCard(date: String, account: String, username: String) {
     ) {
         Column {
             Text(text = "⏰ $date - $username")
-            Text(text = "\uD83D\uDCE9 $account")
+            OutlinedButtonExample(text = "\uD83D\uDD0D $account") {
+                if (name == "") onNameChange(account) else onNameChange("")
+            }
         }
     }
 
 }
 
 @Composable
-fun OutlinedButtonExample(onClick: () -> Unit) {
-    OutlinedButton(onClick = { onClick() }) {
-        Text("Outlined")
+fun OutlinedButtonExample(text : String, onClick: () -> Unit) {
+    TextButton(
+        colors = ButtonDefaults
+            .buttonColors(
+                backgroundColor = Color.White,
+                contentColor = Color.Black
+            ),
+        modifier = Modifier.padding(0.dp),
+        onClick = { onClick() }
+    ) {
+        Text(text)
     }
 }
 
 @Composable
-fun FollowCard(account: String, name : String, onNameChange: (String) -> Unit, prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
+fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
@@ -115,9 +123,6 @@ fun FollowCard(account: String, name : String, onNameChange: (String) -> Unit, p
     ) {
         Column {
             Row {
-                OutlinedButtonExample {
-                    if (name == "") onNameChange(account) else onNameChange("")
-                }
                 Text("\uD83E\uDEF5")
                 if (prevFollower != follower) {
                     if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
