@@ -12,7 +12,7 @@ import org.osprey.trunkfriends.historyhandler.refresh
 
 
 @Composable
-fun RefreshView() {
+fun RefreshView(stopWatch: StopWatch) {
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -20,7 +20,7 @@ fun RefreshView() {
             .verticalScroll(rememberScrollState())
     ) {
         Text("Refreshing...")
-        refresh()
+        stopWatch.start()
         Text("Done refreshing...")
     }
 }

@@ -18,6 +18,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing")
 }
 
 compose.desktop {
