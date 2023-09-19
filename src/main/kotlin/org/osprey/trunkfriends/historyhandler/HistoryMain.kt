@@ -1,19 +1,20 @@
 package org.osprey.trunkfriends.historyhandler
 
+import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
 val timestamp = System.currentTimeMillis()
 
-fun refresh() {
+suspend fun refresh(myfunk: (String) -> Unit) {
     // Set up fetchers
     val currentUserFetcher = MastodonApi()
     val historyHandler = HistoryHandler()
 
     val userId = currentUserFetcher.getUserId()
-    val following = currentUserFetcher.getFollow(userId, "following")
-    val followers = currentUserFetcher.getFollow(userId, "followers")
+    val following = currentUserFetcher.getFollow(userId, "following", myfunk)
+    val followers = currentUserFetcher.getFollow(userId, "followers", myfunk)
 
     File("following_you.dmp").printWriter().use { pw ->
         following.forEach {
@@ -46,5 +47,5 @@ fun refresh() {
 }
 
 fun main() {
-    refresh()
+    //refresh()
 }

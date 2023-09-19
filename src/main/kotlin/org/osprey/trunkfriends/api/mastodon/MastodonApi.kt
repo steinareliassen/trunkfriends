@@ -2,6 +2,7 @@ package org.osprey.trunkfriends.api.mastodon
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.api.GenericHostInterface
 import org.osprey.trunkfriends.api.UserClass
@@ -31,12 +32,12 @@ class MastodonApi : GenericHostInterface {
             UserClass::class.java
         ).id ?: throw IllegalStateException("Cannot extract userid")
 
-    override fun getFollow(userId: String, direction: String): List<UserClass> {
+    override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit): List<UserClass> {
         val follow = mutableListOf<UserClass>()
-        var list = findUserPage(0, userId ?: "empty", direction)
+        var list = findUserPage(0, userId ?: "empty", direction, funk)
         follow.addAll(list.first)
         while (list.second != 0L) {
-            list = findUserPage(list.second, userId ?: "empty", direction)
+            list = findUserPage(list.second, userId ?: "empty", direction, funk)
             follow.addAll(list.first)
         }
         return follow
@@ -73,7 +74,7 @@ class MastodonApi : GenericHostInterface {
         return currentUsers
     }
 
-    private fun findUserPage(start: Long, id: String, direction: String): Pair<Array<UserClass>, Long> {
+    private suspend fun findUserPage(start: Long, id: String, direction: String, funk : (String) -> Unit): Pair<Array<UserClass>, Long> {
         val request = HttpRequest.newBuilder()
             .uri(
                 URI.create(
@@ -95,19 +96,22 @@ class MastodonApi : GenericHostInterface {
 
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
 
-        println("* Fetched page")
+        funk("$direction page $start")
+        delay(100L)
 
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")
         val stopIndex = header.indexOf(">")
 
-        Thread.sleep(500) // Do not overload server with requests
+        Thread.sleep(100) // Do not overload server with requests
 
         try {
             val next = header.substring(startIndex + 7, stopIndex).toLong()
             return Pair(users, next)
         } catch (e: java.lang.NumberFormatException) {
             // ignore
+        } catch (e : Exception) {
+            println("e "+e.message)
         }
         return Pair(users, 0L)
 

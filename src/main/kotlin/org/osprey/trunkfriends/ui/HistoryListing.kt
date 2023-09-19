@@ -25,8 +25,7 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
             .verticalScroll(rememberScrollState())
     ) {
         val previousUserMap = mutableMapOf<String, CurrentUser>()
-        HistoryHandler().readHistory().map {
-                user ->
+        HistoryHandler().readHistory().map { user ->
             with(user) {
                 previousUserMap[first.acct]?.let {
                     HistoryCard(
@@ -36,7 +35,7 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
                         prevFollowing = it.following,
                         acct = first.acct,
                         username = first.username,
-                        timeStamp = second.substring(0,second.length-3).toLong()
+                        timeStamp = second.substring(0, second.length - 3).toLong()
                     ).also {
                         previousUserMap[first.acct] = first
                     }
@@ -47,7 +46,7 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
                     prevFollowing = first.following,
                     acct = first.acct,
                     username = first.username,
-                    timeStamp = second.substring(0,second.length-3).toLong()
+                    timeStamp = second.substring(0, second.length - 3).toLong()
                 ).also {
                     previousUserMap[first.acct] = first
                 }
@@ -62,13 +61,16 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
                     .align(Alignment.CenterHorizontally)
             ) {
                 val date = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-                    .withLocale(Locale.GERMAN )
+                    .withLocale(Locale.GERMAN)
                     .withZone(ZoneId.of("CET"))
                     .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
                         FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
-                        FancyCard(name, onNameChange, date, it.acct, it.username)
+                        FancyCard(date, it.acct, it.username)
+                        FancyButton(text = "\uD83D\uDD0D") {
+                            if (name == "") onNameChange(it.acct) else onNameChange("")
+                        }
                     }
                 }
             }
@@ -77,27 +79,25 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
 }
 
 @Composable
-fun FancyCard(name : String, onNameChange: (String) -> Unit, date: String, account: String, username: String) {
+fun FancyCard(date: String, account: String, username: String) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
             width = 1.dp,
             color = Color.LightGray
         ),
-        modifier = Modifier.padding(Dp(4F)).width(670.dp)
+        modifier = Modifier.padding(Dp(4F)).width(570.dp)
     ) {
         Column {
             Text(text = "⏰ $date - $username")
-            OutlinedButtonExample(text = "\uD83D\uDD0D $account") {
-                if (name == "") onNameChange(account) else onNameChange("")
-            }
+            Text(text = account)
         }
     }
 
 }
 
 @Composable
-fun OutlinedButtonExample(text : String, onClick: () -> Unit) {
+fun FancyButton(text: String, onClick: () -> Unit) {
     TextButton(
         colors = ButtonDefaults
             .buttonColors(
@@ -122,17 +122,23 @@ fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean,
         modifier = Modifier.padding(Dp(4F)).width(100.dp)
     ) {
         Column {
-            Row {
+            Row() {
                 Text("\uD83E\uDEF5")
                 if (prevFollower != follower) {
-                    if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
+                    if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                        "\uD83D\uDFE2 ➡",
+                        color = Color.Blue
+                    )
                 }
                 if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
             }
             Row {
                 Text("\uD83D\uDC49")
                 if (prevFollowing != following) {
-                    if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text("\uD83D\uDFE2 ➡", color = Color.Blue)
+                    if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                        "\uD83D\uDFE2 ➡",
+                        color = Color.Blue
+                    )
                 }
                 if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
             }

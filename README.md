@@ -1,7 +1,15 @@
 
 # Trunkfriends
+
+## IMPORTANT INFORMATION
+
+Trunk Friends is NOT something close to be considered ready. I am making this
+public now, so people can use it if they want. You need to build the project
+locally before running it,
+
 ## What is TrunkFriends
-I started writing TrunkFriends as a result of suddenly being disconnected from a friend when the server I was on,
+I started writing TrunkFriends as a result of suddenly being disconnected 
+from a friend when the server I was on,
 defederated the server they were on.
 
 I decided I needed a little tool that could make me aware of similar things
@@ -28,10 +36,11 @@ server defederation. They may of course have blocked you, if so, please
 leave them alone, but if server defederation got between you and a friend,
 it is nice to know
 
-### Managing who is on your lists
+## Is TrunkFriends limited to Mastodon? 
 
-# trunkfriends
+For now, Trunk Friends is only tested against Mastodon servers and only have an API
+client for Mastodon. However, the software is written to be flexible, and it should
+be pretty straight forward to implement support for instance for Firefish. This may
+come soon.
 
-What you are looking for is Tabs
 
-https://www.freecodecamp.org/news/tabs-in-jetpack-compose/

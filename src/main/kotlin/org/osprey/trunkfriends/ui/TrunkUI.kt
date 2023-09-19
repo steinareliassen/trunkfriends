@@ -17,34 +17,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.*
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.*
+import org.osprey.trunkfriends.historyhandler.refresh
 
 @Composable
 @Preview
 fun App(stopWatch : StopWatch) {
-    var name by remember { mutableStateOf("") }
-    var view by remember { mutableStateOf("History") }
 
     Column {
-        Text(stopWatch.formattedTime)
         Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
             Button(
                 enabled = stopWatch.activeButtons,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { view = "Friends" }
+                onClick = { stopWatch.view = "Friends" }
             ) {
-                Text("Friend Overview")
+                Text("About")
             }
             Button(
                 enabled = stopWatch.activeButtons,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { view = "History" }
+                onClick = { stopWatch.view = "History" }
             ) {
                 Text("History Overview")
             }
@@ -53,15 +46,16 @@ fun App(stopWatch : StopWatch) {
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                 onClick = {
-                    view = "Refresh"
+                    stopWatch.start("History")
+                    stopWatch.view = "Refresh"
                 }
             ) {
                 Text("Refresh against server")
             }
 
         }
-        if (view == "History") HistoryListing(name, onNameChange = { name = it })
-        if (view == "Refresh") {
+        if (stopWatch.view == "History") HistoryListing(stopWatch.name, onNameChange = { stopWatch.name = it })
+        if (stopWatch.view == "Refresh") {
             RefreshView(stopWatch)
         }
     }
@@ -78,53 +72,25 @@ fun main() = application {
 }
 
 class StopWatch {
-
-    var formattedTime by mutableStateOf("00:00:00")
+    var name by mutableStateOf("")
+    var view by mutableStateOf("History")
+    var formattedTime by mutableStateOf("\n\nRefreshing followers / following list, please wait\n\nStarting fetch\n")
     var activeButtons by mutableStateOf(true)
 
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
     private var isActive = false
 
-    private var timeMillis = 0L
-    private var lastTimestamp = 0L
-
-    fun start() {
+    fun start(returnView : String) {
         if (isActive) return
         coroutineScope.launch {
             activeButtons = false
-            lastTimestamp = System.currentTimeMillis()
-            this@StopWatch.isActive = true
-            while (this@StopWatch.isActive) {
-                delay(10L)
-                timeMillis += System.currentTimeMillis() - lastTimestamp
-                lastTimestamp = System.currentTimeMillis()
-                formattedTime = formatTime(timeMillis)
+            refresh {
+                formattedTime += it+"\n"
             }
+            activeButtons = true
+            view = returnView
+            formattedTime = "Starting fetch\n"
         }
     }
 
-    fun pause() {
-        isActive = false
-    }
-
-    fun reset() {
-        coroutineScope.cancel()
-        coroutineScope = CoroutineScope(Dispatchers.Main)
-        timeMillis = 0L
-        lastTimestamp = 0L
-        formattedTime = "00:00:00"
-        isActive = false
-    }
-
-    private fun formatTime(timeMillis: Long): String {
-        val localDateTime = LocalDateTime.ofInstant(
-            Instant.ofEpochMilli(timeMillis),
-            ZoneId.systemDefault()
-        )
-        val formatter = DateTimeFormatter.ofPattern(
-            "mm:ss:SS",
-            Locale.getDefault()
-        )
-        return localDateTime.format(formatter)
-    }
 }
