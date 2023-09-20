@@ -62,7 +62,9 @@ Clone the repository or download the code from github.
 
 Make sure you have Java SDK installed, version 17 or higher.
 
-Open a terminal / command prompt, and run "gradlew". This will build Trunk Friends
+Open a terminal / command prompt, and run "gradlew build". This will build Trunk Friends
+on windows: gradlew.bat build
+on *nix systems: ./gradlew build
 
 Create a copy of the file "config.json.example" called "config.json"
 
@@ -72,7 +74,8 @@ bearer token. You need to fetch bearer token from a logged-in session with your
 mastodon server. More info on how to do that will follow.
 
 Start trunk friends by typing:
-java -jar
+on windows: gradlew.bat run
+on *nix systems: ./gradlew run
 
 ## Using Trunk Friends
 

@@ -9,8 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
-
-
 @Composable
 fun aboutView() {
     Column(
@@ -19,7 +17,9 @@ fun aboutView() {
             .background(Color.Gray)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("""
+       Row {
+            Text(
+                """
 Trunk Friends is a simple friends tracking software.
 
 It is free, use "as is" software.
@@ -29,6 +29,8 @@ This is still incomplete, though still usable software.
 This is public domain, no copyrights reserved, no warranty given.
 
 https://github.com/steinareliassen/trunkfriends
-        """.trimIndent(), color = Color.Black)
+        """.trimIndent(), color = Color.Black
+            )
+        }
     }
 }

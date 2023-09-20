@@ -1,5 +1,6 @@
 package org.osprey.trunkfriends.historyhandler
 
+import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.util.mapper
@@ -54,9 +55,12 @@ suspend fun refresh(feedbackFunction: (String) -> Unit) {
             currentUsers
         ) // Compare previous run to current run and create new history lines
         feedbackFunction("Imported lines : "+newHistory.size+"\n\n")
+        delay(1000L)
         historyHandler.writeHistory(history + newHistory) // write out old and new history combined
     } catch (e : Exception) {
+        println("FEILET")
         feedbackFunction("Error during fetch, list not updated\n\n")
         feedbackFunction("Error: ${e.message}\n\n")
+        delay(1000L)
     }
 }

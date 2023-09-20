@@ -22,10 +22,10 @@ class UIState {
         refreshActive = true
         coroutineScope.launch {
             activeButtons = false
+            refreshText = "Starting fetch\n"
             refresh {
                 refreshText += it+"\n"
             }
-            refreshText = "Starting fetch\n"
             refreshActive = false
             activeButtons = true
         }

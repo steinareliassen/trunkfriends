@@ -123,7 +123,7 @@ fun followCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean,
         modifier = Modifier.padding(Dp(4F)).width(100.dp)
     ) {
         Column {
-            Row() {
+            Row {
                 Text("\uD83E\uDEF5")
                 if (prevFollower != follower) {
                     if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(

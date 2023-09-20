@@ -18,14 +18,13 @@ import androidx.compose.ui.unit.dp
 @Composable
 @Preview
 fun App(state : UIState) {
-
     Column {
         Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
             Button(
                 enabled = state.activeButtons,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.view = "Friends" }
+                onClick = { state.view = "About" }
             ) {
                 Text("About")
             }
