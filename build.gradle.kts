@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.osprey"
-version = "1.0-SNAPSHOT"
+version = "0.0.1"
 
 repositories {
     mavenCentral()
@@ -23,12 +23,12 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "TrunkUIKt"
+        mainClass = "org.osprey.trunkfriends.ui.TrunkUIKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Trunkfriends"
-            packageVersion = "1.0.0"
+            packageVersion = "0.0.1"
         }
     }
 }
