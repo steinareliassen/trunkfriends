@@ -42,7 +42,7 @@ fun App(state : UIState) {
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                 onClick = {
-                    state.start("History")
+                    state.start()
                     state.view = "Refresh"
                 }
             ) {

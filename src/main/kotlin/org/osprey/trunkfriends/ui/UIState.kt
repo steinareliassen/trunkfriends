@@ -17,7 +17,7 @@ class UIState {
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
     private var refreshActive = false
 
-    fun start(returnView : String) {
+    fun start() {
         if (refreshActive) return
         refreshActive = true
         coroutineScope.launch {
@@ -25,7 +25,6 @@ class UIState {
             refresh {
                 refreshText += it+"\n"
             }
-            view = returnView
             refreshText = "Starting fetch\n"
             refreshActive = false
             activeButtons = true
