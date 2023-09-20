@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends.ui
+package org.osprey.trunkfriends.ui.dto
 
 data class HistoryCard(
     val timeStamp: Long,

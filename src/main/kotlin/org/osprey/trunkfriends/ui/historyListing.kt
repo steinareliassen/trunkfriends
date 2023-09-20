@@ -11,13 +11,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
+import org.osprey.trunkfriends.ui.dto.HistoryCard
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
-fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
+fun historyListing(name: String, onNameChange: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -66,9 +67,9 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
                     .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
-                        FollowCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
-                        FancyCard(date, it.acct, it.username)
-                        FancyButton(text = "\uD83D\uDD0D") {
+                        followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
+                        infoCard(date, it.acct, it.username)
+                        zoomButton(text = "\uD83D\uDD0D") {
                             if (name == "") onNameChange(it.acct) else onNameChange("")
                         }
                     }
@@ -79,7 +80,7 @@ fun HistoryListing(name: String, onNameChange: (String) -> Unit) {
 }
 
 @Composable
-fun FancyCard(date: String, account: String, username: String) {
+fun infoCard(date: String, account: String, username: String) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
@@ -97,7 +98,7 @@ fun FancyCard(date: String, account: String, username: String) {
 }
 
 @Composable
-fun FancyButton(text: String, onClick: () -> Unit) {
+fun zoomButton(text: String, onClick: () -> Unit) {
     TextButton(
         colors = ButtonDefaults
             .buttonColors(
@@ -112,7 +113,7 @@ fun FancyButton(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun FollowCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
+fun followCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(

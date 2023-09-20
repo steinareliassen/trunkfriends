@@ -1,20 +1,30 @@
 package org.osprey.trunkfriends.historyhandler
 
-import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
+import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
 val timestamp = System.currentTimeMillis()
 
-suspend fun refresh(myfunk: (String) -> Unit) {
+suspend fun refresh(feedbackFunction: (String) -> Unit) {
     // Set up fetchers
-    val currentUserFetcher = MastodonApi()
+
+    val file = File("config.json")
+    val config = if (file.exists()) {
+        file.readLines().first().let {
+             mapper.readValue(
+                it, Config::class.java
+            )
+        }
+    } else throw Exception("Config file not found")
+
+    val currentUserFetcher = MastodonApi(config)
     val historyHandler = HistoryHandler()
 
     val userId = currentUserFetcher.getUserId()
-    val following = currentUserFetcher.getFollow(userId, "following", myfunk)
-    val followers = currentUserFetcher.getFollow(userId, "followers", myfunk)
+    val following = currentUserFetcher.getFollow(userId, "following", feedbackFunction)
+    val followers = currentUserFetcher.getFollow(userId, "followers", feedbackFunction)
 
     File("following_you.dmp").printWriter().use { pw ->
         following.forEach {
@@ -44,8 +54,4 @@ suspend fun refresh(myfunk: (String) -> Unit) {
     ) // Compare previous run to current run and create new history lines
     println(newHistory.size)
     historyHandler.writeHistory(history + newHistory) // write out old and new history combined
-}
-
-fun main() {
-    //refresh()
 }

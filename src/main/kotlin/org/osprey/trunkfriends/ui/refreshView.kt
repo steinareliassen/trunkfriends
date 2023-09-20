@@ -12,13 +12,13 @@ import androidx.compose.ui.graphics.Color
 
 
 @Composable
-fun RefreshView(stopWatch: StopWatch) {
+fun refreshView(state: UIState) {
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
             .background(Color.Gray)
             .verticalScroll(rememberScrollState())
     ) {
-        Text(stopWatch.formattedTime)
+        Text(state.refreshText)
     }
 }

@@ -6,9 +6,8 @@ import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.api.GenericHostInterface
 import org.osprey.trunkfriends.api.UserClass
-import org.osprey.trunkfriends.bearer
+import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.*
-import org.osprey.trunkfriends.server
 import org.osprey.trunkfriends.util.mapper
 import java.lang.IllegalStateException
 import java.net.URI
@@ -17,27 +16,29 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import kotlin.jvm.optionals.getOrNull
 
-class MastodonApi : GenericHostInterface {
+class MastodonApi(
+    val config : Config
+) : GenericHostInterface {
 
     override fun getUserId() =
         mapper.readValue(
             HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder()
-                    .uri(URI.create("https://$server/api/v1/accounts/verify_credentials"))
-                    .header("Authorization", bearer)
+                    .uri(URI.create("https://${config.server}/api/v1/accounts/verify_credentials"))
+                    .header("Authorization", config.bearer)
                     .method("GET", HttpRequest.BodyPublishers.noBody())
                     .build(),
                 HttpResponse.BodyHandlers.ofString()
             ).body(),
             UserClass::class.java
-        ).id ?: throw IllegalStateException("Cannot extract userid")
+        ).id
 
     override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit): List<UserClass> {
         val follow = mutableListOf<UserClass>()
-        var list = findUserPage(0, userId ?: "empty", direction, funk)
+        var list = findUserPage(0, userId, direction, funk)
         follow.addAll(list.first)
         while (list.second != 0L) {
-            list = findUserPage(list.second, userId ?: "empty", direction, funk)
+            list = findUserPage(list.second, userId, direction, funk)
             follow.addAll(list.first)
         }
         return follow
@@ -78,11 +79,11 @@ class MastodonApi : GenericHostInterface {
         val request = HttpRequest.newBuilder()
             .uri(
                 URI.create(
-                    "https://$server/api/v1/accounts/${id}/$direction" +
+                    "https://${config.server}/api/v1/accounts/${id}/$direction" +
                             if (start != 0L) "?max_id=$start" else ""
                 )
             )
-            .header("Authorization", bearer)
+            .header("Authorization", config.bearer)
             .method("GET", HttpRequest.BodyPublishers.noBody())
             .build()
 
@@ -106,12 +107,11 @@ class MastodonApi : GenericHostInterface {
         Thread.sleep(100) // Do not overload server with requests
 
         try {
+            if (header == "empty") return Pair(users, 0L)
             val next = header.substring(startIndex + 7, stopIndex).toLong()
             return Pair(users, next)
         } catch (e: java.lang.NumberFormatException) {
-            // ignore
-        } catch (e : Exception) {
-            println("e "+e.message)
+            // this is ok, ignore
         }
         return Pair(users, 0L)
 
