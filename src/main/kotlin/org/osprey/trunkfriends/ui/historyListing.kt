@@ -8,6 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
@@ -18,7 +20,20 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
-fun historyListing(name: String, onNameChange: (String) -> Unit) {
+fun historyListing(
+    name: String,
+    time: Long,
+    onNameChange: (String) -> Unit,
+    onTimeChange: (Long) -> Unit
+) {
+    fun timestampToDateString(timestamp: Long) =
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME
+            .withLocale(Locale.GERMAN)
+            .withZone(ZoneId.of("CET"))
+            .format(Instant.ofEpochSecond(timestamp / 1000)).run {
+                this.substring(0..this.length-4).replace("T"," ")
+            }
+
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -26,7 +41,24 @@ fun historyListing(name: String, onNameChange: (String) -> Unit) {
             .verticalScroll(rememberScrollState())
     ) {
         val previousUserMap = mutableMapOf<String, CurrentUser>()
-        HistoryHandler().readHistory().map { user ->
+        val history = HistoryHandler().readHistory()
+        history.map { (_, control) ->
+            control.substring(0, control.length - 3).toLong()
+        }.distinct().chunked(5).forEach {
+
+            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                it.forEach {
+                    Column(modifier = Modifier.padding(2.dp)) {
+                        dateButton(text = timestampToDateString(it)) {
+                            onTimeChange(it)
+                        }
+                    }
+                }
+            }
+
+        }
+
+        history.map { user ->
             with(user) {
                 previousUserMap[first.acct]?.let {
                     HistoryCard(
@@ -53,7 +85,7 @@ fun historyListing(name: String, onNameChange: (String) -> Unit) {
                 }
             }
         }.forEach {
-            if (name == "" || name == it.acct) Card(
+            if ((name == "" || name == it.acct) && time == it.timeStamp) Card(
                 elevation = Dp(4F),
                 modifier = Modifier
                     .width(740.dp)
@@ -61,14 +93,10 @@ fun historyListing(name: String, onNameChange: (String) -> Unit) {
                     .padding(4.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
-                val date = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-                    .withLocale(Locale.GERMAN)
-                    .withZone(ZoneId.of("CET"))
-                    .format(Instant.ofEpochSecond(it.timeStamp / 1000))
                 Column {
                     Row(modifier = Modifier.align(Alignment.Start)) {
                         followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
-                        infoCard(date, it.acct, it.username)
+                        infoCard(timestampToDateString(it.timeStamp), it.acct, it.username)
                         zoomButton(text = "\uD83D\uDD0D") {
                             if (name == "") onNameChange(it.acct) else onNameChange("")
                         }
@@ -109,6 +137,24 @@ fun zoomButton(text: String, onClick: () -> Unit) {
         onClick = { onClick() }
     ) {
         Text(text)
+    }
+}
+
+@Composable
+fun dateButton(text: String, onClick: () -> Unit) {
+    OutlinedButton(
+        colors = ButtonDefaults
+            .buttonColors(
+                backgroundColor = Color.White,
+                contentColor = Color.Black
+            ),
+        modifier = Modifier.padding(0.dp).height(25.dp).width(130.dp),
+        onClick = { onClick() }
+    ) {
+        Text(
+            text= text,
+            fontSize = TextUnit(9f, TextUnitType.Sp)
+        )
     }
 }
 

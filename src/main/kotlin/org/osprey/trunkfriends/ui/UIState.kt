@@ -10,6 +10,7 @@ import org.osprey.trunkfriends.historyhandler.refresh
 
 class UIState {
     var name by mutableStateOf("")
+    var time by mutableStateOf(0L)
     var view by mutableStateOf("History")
     var refreshText by mutableStateOf("\n\nRefreshing followers / following list, please wait\n\nStarting fetch\n")
     var activeButtons by mutableStateOf(true)

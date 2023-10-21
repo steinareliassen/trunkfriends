@@ -14,6 +14,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import org.apache.commons.io.FileUtils
+import java.nio.file.Files
+import java.nio.file.Paths
 
 @Composable
 @Preview
@@ -49,7 +52,13 @@ fun App(state : UIState) {
             }
 
         }
-        if (state.view == "History") historyListing(state.name, onNameChange = { state.name = it })
+        if (state.view == "History")
+            historyListing(
+                state.name,
+                state.time,
+                onNameChange = { state.name = it },
+                onTimeChange = { state.time = it}
+            )
         if (state.view == "About") aboutView()
         if (state.view == "Refresh") {
             refreshView(state)
@@ -58,6 +67,14 @@ fun App(state : UIState) {
 }
 
 fun main() = application {
+
+    val path = Paths.get(FileUtils.getUserDirectoryPath()+"/.trunkfriends")
+    if (!Files.exists(path)) {
+        Files.createDirectory(path)
+    }
+
+    if (Files.isDirectory(path)) throw IllegalStateException("Config folder is not a folder")
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "Trunk Friends"
