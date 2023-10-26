@@ -1,6 +1,20 @@
 
 # Trunkfriends
 
+## Upgrading from previous version of TrunkFriends
+
+Keep the folder from the previous installation, and install
+and run the new version. Create a connection to the server using
+"add server". Trunkfriends will create a folder called 
+".trunkfriends" in your home directory, containing subfolder
+for the servername and within this, a subfolder for username.
+
+Quit trunkfriends.
+
+Copy "datafile.dmp" from the previous installation folder to 
+this folder. Start trunkfriends again. Select the server, and 
+the previously imported data should be there.
+
 ## Important Information
 
 Trunk Friends is NOT something close to be considered ready. I am making this

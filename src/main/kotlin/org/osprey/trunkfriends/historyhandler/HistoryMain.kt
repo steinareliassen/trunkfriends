@@ -25,7 +25,7 @@ suspend fun refresh(feedbackFunction: (String) -> Unit) {
 
         // Find user status from previous run
         val history =
-            historyHandler.readHistory() // Read old history from file. History can contain multiple entries pr user
+            historyHandler.readHistory("") // Read old history from file. History can contain multiple entries pr user
         val latestHistory =
             historyHandler.extractPreviousRunFromHistory(history) // Find latest status of each user from history
 

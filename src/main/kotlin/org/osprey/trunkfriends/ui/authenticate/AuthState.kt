@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 class AuthState {
+    var activeStep by mutableStateOf("")
     var token  by mutableStateOf("")
     var domain by mutableStateOf("")
     var url by mutableStateOf("")

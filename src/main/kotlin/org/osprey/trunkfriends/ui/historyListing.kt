@@ -21,6 +21,7 @@ import java.util.*
 
 @Composable
 fun historyListing(
+    piper: String,
     name: String,
     time: Long,
     onNameChange: (String) -> Unit,
@@ -40,8 +41,11 @@ fun historyListing(
             .background(Color.Gray)
             .verticalScroll(rememberScrollState())
     ) {
+        Row {
+            Text("pip $piper")
+        }
         val previousUserMap = mutableMapOf<String, CurrentUser>()
-        val history = HistoryHandler().readHistory()
+        val history = HistoryHandler().readHistory(piper)
         history.map { (_, control) ->
             control.substring(0, control.length - 3).toLong()
         }.distinct().chunked(5).forEach {

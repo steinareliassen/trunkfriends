@@ -6,9 +6,12 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
 
-class UIState {
+class UIState(var configMap: List<Pair<String, Config>>) {
+    var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
+    var dropDownState by mutableStateOf(false)
     var name by mutableStateOf("")
     var time by mutableStateOf(0L)
     var view by mutableStateOf("History")

@@ -1,15 +1,17 @@
 package org.osprey.trunkfriends.historyhandler
 
+import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
 class HistoryHandler {
 
-    fun readHistory() : List<Pair<CurrentUser,String>> {
+    fun readHistory(configPath : String) : List<Pair<CurrentUser,String>> {
         val history = mutableListOf<Pair<CurrentUser,String>>()
 
-        val file = File("datafile.dmp")
+        val path = FileUtils.getUserDirectoryPath()+"/.trunkfriends/$configPath"
+        val file = File("$path/datafile.dmp")
         if (file.exists()) {
             file.readLines().forEach {
                 val stra = it.substring(0, it.indexOf("-") + 3)
