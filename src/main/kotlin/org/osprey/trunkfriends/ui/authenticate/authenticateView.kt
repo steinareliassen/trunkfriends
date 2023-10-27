@@ -1,12 +1,14 @@
 package org.osprey.trunkfriends.ui.authenticate
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipboardManager
@@ -16,24 +18,31 @@ import androidx.compose.ui.unit.dp
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.api.mastodon.MastodonAuthApi
 import org.osprey.trunkfriends.config.Config
+import org.osprey.trunkfriends.ui.UIState
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
 @Composable
-fun authenticateView(state: AuthState) {
+fun authenticateView(state: AuthState, uiState : UIState) {
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val api = MastodonAuthApi()
 
     Column {
 
         if (state.activeStep == "") {
-            Row() {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .border(width = 4.dp, color = Color.Magenta)
+                    .background(Color.White).fillMaxWidth()
+            ) {
                 Text(
-                    "First thing, you nee to enter the domain name of the server you want to connect to.\n" +
-                            "If your username is @user@mastodon.social, the domain name is mastodon.social\n" +
-                            "Press \"ACTIVATE\" after you enter the domain name."
+                    text =
+                    "\n First thing, you nee to enter the domain name of the server you want to connect to.\n" +
+                            " If your username is @user@mastodon.social, the domain name is mastodon.social\n" +
+                            " Press \"ACTIVATE\" after you enter the domain name.\n"
                 )
             }
         }
@@ -42,7 +51,7 @@ fun authenticateView(state: AuthState) {
             TextField(
                 enabled = true,
                 value = state.domain,
-                onValueChange = {state.domain = it},
+                onValueChange = { state.domain = it },
                 label = { Text("The domain you want to register") }
             )
             Button(
@@ -80,7 +89,7 @@ fun authenticateView(state: AuthState) {
 
         Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
             TextField(
-                value = state.url.substring(0 ..  if (state.url.length < 20) state.url.length-1 else 20),
+                value = state.url.substring(0..if (state.url.length < 20) state.url.length - 1 else 20),
                 onValueChange = {},
                 label = { Text("Copy this URL and paste it in a browser logged in with your account") }
             )
@@ -108,27 +117,27 @@ fun authenticateView(state: AuthState) {
             }
         }
 
-        Column {
-            Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
-                TextField(
-                    value = state.code,
-                    onValueChange = {},
-                    label = { Text("Paste the code you got from your server in here and press activate") }
-                )
-                Button(
-                    enabled = true,
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = {
-                        state.code = clipboardManager.getText()?.text ?: "empty clipboard"
-                        state.activeStep = "step4"
-                    }
-                ) {
-                    Text("Paste")
-                }
 
+        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+            TextField(
+                value = state.code,
+                onValueChange = {},
+                label = { Text("Paste the code you got from your server in here and press activate") }
+            )
+            Button(
+                enabled = true,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = {
+                    state.code = clipboardManager.getText()?.text ?: "empty clipboard"
+                    state.activeStep = "step4"
+                }
+            ) {
+                Text("Paste")
             }
+
         }
+
         if (state.activeStep == "step4") {
             Row() {
                 Text(
@@ -138,53 +147,65 @@ fun authenticateView(state: AuthState) {
                 )
             }
         }
-        Column {
-            Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
-                Text(
-                    text = "Once the code you got from the server is pasted into the field over, press register"
-                )
 
-                Button(
-                    enabled = true,
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = {
-                        state.token = api.obtainToken(
-                            state.domain,
-                            state.clientId,
-                            state.clientSecret,
-                            state.code
-                        )
+        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+            Text(
+                text = "Once the code you got from the server is pasted into the field over, press register"
+            )
 
-                        val userClass = api.getUserInformation(state.token, state.domain)
+            Button(
+                enabled = true,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = {
+                    state.token = api.obtainToken(
+                        state.domain,
+                        state.clientId,
+                        state.clientSecret,
+                        state.code
+                    )
 
-                        val config = Config(
-                            bearer = state.token,
-                            server = state.domain
-                        )
+                    val userClass = api.getUserInformation(state.token, state.domain)
 
-                        val serverPath = Paths.get(FileUtils.getUserDirectoryPath()+"/.trunkfriends/${state.domain}")
-                        if (!Files.exists(serverPath)) {
-                            Files.createDirectory(serverPath)
-                        }
+                    val config = Config(
+                        bearer = "Bearer ${state.token}",
+                        server = state.domain
+                    )
 
-                        val configPath = FileUtils.getUserDirectoryPath() +
-                                "/.trunkfriends/${state.domain}/${userClass.acct}";
-                        val userPath = Paths.get(configPath)
-
-                        if (!Files.exists(userPath)) {
-                            Files.createDirectory(userPath)
-                        }
-
-                        File(configPath+"/config.json").printWriter().use { pw ->
-                                pw.println(mapper.writeValueAsString(config))
-                        }
-
+                    val serverPath = Paths.get(FileUtils.getUserDirectoryPath() + "/.trunkfriends/${state.domain}")
+                    if (!Files.exists(serverPath)) {
+                        Files.createDirectory(serverPath)
                     }
-                ) {
-                    Text("Register")
-                }
 
+                    val configPath = FileUtils.getUserDirectoryPath() +
+                            "/.trunkfriends/${state.domain}/${userClass.acct}";
+                    val userPath = Paths.get(configPath)
+
+                    if (!Files.exists(userPath)) {
+                        Files.createDirectory(userPath)
+                    }
+
+                    File(configPath + "/config.json").printWriter().use { pw ->
+                        pw.println(mapper.writeValueAsString(config))
+                    }
+
+                }
+            ) {
+                Text("Register")
+            }
+
+        }
+
+        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+            Button(
+                enabled = true,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = {
+                    uiState.view = "History"
+                }
+            ) {
+                Text("Cancel server registration")
             }
         }
 

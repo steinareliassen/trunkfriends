@@ -3,17 +3,17 @@ package org.osprey.trunkfriends.ui
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
-import org.osprey.trunkfriends.ui.dto.HistoryCard
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -21,9 +21,10 @@ import java.util.*
 
 @Composable
 fun historyListing(
-    piper: String,
+    serverUser: String,
     name: String,
     time: Long,
+    state: UIState,
     onNameChange: (String) -> Unit,
     onTimeChange: (Long) -> Unit
 ) {
@@ -32,7 +33,7 @@ fun historyListing(
             .withLocale(Locale.GERMAN)
             .withZone(ZoneId.of("CET"))
             .format(Instant.ofEpochSecond(timestamp / 1000)).run {
-                this.substring(0..this.length-4).replace("T"," ")
+                this.substring(0..this.length - 4).replace("T", " ")
             }
 
     Column(
@@ -41,55 +42,71 @@ fun historyListing(
             .background(Color.Gray)
             .verticalScroll(rememberScrollState())
     ) {
-        Row {
-            Text("pip $piper")
-        }
-        val previousUserMap = mutableMapOf<String, CurrentUser>()
-        val history = HistoryHandler().readHistory(piper)
-        history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.distinct().chunked(5).forEach {
 
-            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                it.forEach {
-                    Column(modifier = Modifier.padding(2.dp)) {
-                        dateButton(text = timestampToDateString(it)) {
-                            onTimeChange(it)
-                        }
-                    }
+        val history = HistoryHandler().readHistory(serverUser)
+        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+
+            if (history.isNotEmpty() && state.name.isEmpty()) {
+                Button(
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { state.historyDropdownState = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Servers"
+                    )
+                    Text("select timeslot")
+                }
+
+                Button(
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Previous"
+                    )
+                    Text("Previous")
+                }
+
+                Button(
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { }
+                ) {
+                    Text("Next")
+                    Icon(
+                        imageVector = Icons.Default.ArrowForward,
+                        contentDescription = "Next"
+                    )
+
                 }
             }
 
         }
+        DropdownMenu(
+            expanded = state.historyDropdownState,
+            onDismissRequest = { state.historyDropdownState = false }
+        ) {
 
-        history.map { user ->
-            with(user) {
-                previousUserMap[first.acct]?.let {
-                    HistoryCard(
-                        follower = first.follower,
-                        prevFollower = it.follower,
-                        following = first.following,
-                        prevFollowing = it.following,
-                        acct = first.acct,
-                        username = first.username,
-                        timeStamp = second.substring(0, second.length - 3).toLong()
-                    ).also {
-                        previousUserMap[first.acct] = first
+            history.map { (_, control) ->
+                control.substring(0, control.length - 3).toLong()
+            }.distinct().forEach {
+                DropdownMenuItem(
+                    onClick = {
+                        onTimeChange(it)
+                        state.historyDropdownState = false
                     }
-                } ?: HistoryCard(
-                    follower = first.follower,
-                    prevFollower = first.follower,
-                    following = first.following,
-                    prevFollowing = first.following,
-                    acct = first.acct,
-                    username = first.username,
-                    timeStamp = second.substring(0, second.length - 3).toLong()
-                ).also {
-                    previousUserMap[first.acct] = first
+                ) {
+                    Text(timestampToDateString(it))
                 }
             }
-        }.forEach {
-            if ((name == "" || name == it.acct) && time == it.timeStamp) Card(
+        }
+
+        HistoryHandler().createHistoryCards(history).forEach {
+            if ((name == "" && time == it.timeStamp) || name == it.acct) Card(
                 elevation = Dp(4F),
                 modifier = Modifier
                     .width(740.dp)
@@ -141,24 +158,6 @@ fun zoomButton(text: String, onClick: () -> Unit) {
         onClick = { onClick() }
     ) {
         Text(text)
-    }
-}
-
-@Composable
-fun dateButton(text: String, onClick: () -> Unit) {
-    OutlinedButton(
-        colors = ButtonDefaults
-            .buttonColors(
-                backgroundColor = Color.White,
-                contentColor = Color.Black
-            ),
-        modifier = Modifier.padding(0.dp).height(25.dp).width(130.dp),
-        onClick = { onClick() }
-    ) {
-        Text(
-            text= text,
-            fontSize = TextUnit(9f, TextUnitType.Sp)
-        )
     }
 }
 

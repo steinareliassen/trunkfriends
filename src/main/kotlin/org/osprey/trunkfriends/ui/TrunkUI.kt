@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -29,93 +30,122 @@ import java.nio.file.Paths
 @Composable
 @Preview
 fun App(state : UIState) {
-    Column {
-        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
-            Button(
-                enabled = state.activeButtons,
-                modifier = Modifier.padding(4.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.view = "About" }
-            ) {
-                Text("About")
-            }
-            Button(
-                enabled = state.activeButtons,
-                modifier = Modifier.padding(4.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.view = "History" }
-            ) {
-                Text("History Overview")
-            }
-            Button(
-                enabled = state.activeButtons,
-                modifier = Modifier.padding(4.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = {
-                    state.start()
-                    state.view = "Refresh"
-                }
-            ) {
-                Text("Refresh against server")
-            }
-
-            Button(onClick = {
-                state.dropDownState = true
-            }) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Servers"
-                )
-                Text("select server")
-            }
-
-            DropdownMenu(
-                expanded = state.dropDownState,
-                onDismissRequest = { state.dropDownState = false }
-            ) {
-                state.configMap.forEach { configPair ->
-                    DropdownMenuItem(
-                        onClick = {
-                            state.dropDownState = false
-                            state.selectedConfig = configPair
-                        }
-                    ) {
-                        Text(configPair.first)
-                    }
-                }
-                DropdownMenuItem(
-                    onClick = {
-                        state.view = "Add server"
-                        state.dropDownState = false
-                    }
+    Column(Modifier.background(Color.Gray).fillMaxHeight()) {
+        if (state.view == "Add server") authenticateView(remember { AuthState() }, state)
+        else if(state.name.isNotEmpty()) {
+            Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+                Button(
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { state.name = "" }
                 ) {
-                    Text("Add new server")
+                    Text("Clear search")
                 }
             }
-
-        }
-        Row(
-            modifier = Modifier
-                .border(width = 2.dp, color = Color.Magenta)
-                .background(Color.White).fillMaxWidth()) {
-            Text("Selected server: " +
-                    (state.selectedConfig?.first ?: "select server from dropdown"),
-                fontSize = TextUnit(20f, TextUnitType.Sp)
-            )
-        }
-        if (state.view == "History")
             historyListing(
                 state.selectedConfig?.first ?: "No Server",
                 state.name,
                 state.time,
+                state,
                 onNameChange = { state.name = it },
-                onTimeChange = { state.time = it}
+                onTimeChange = { state.time = it },
             )
-        if (state.view == "About") aboutView()
-        if (state.view == "Refresh") {
-            refreshView(state)
         }
-        if (state.view == "Add server") authenticateView(remember { AuthState() })
+        else {
+            Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
+                Button(
+                    enabled = state.activeButtons,
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { state.view = "About" }
+                ) {
+                    Text("About")
+                }
+
+                if (state.selectedConfig != null) {
+                    Button(
+                        enabled = state.activeButtons,
+                        modifier = Modifier.padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                        onClick = { state.view = "History" }
+                    ) {
+                        Text("History Overview")
+                    }
+                    Button(
+                        enabled = state.activeButtons,
+                        modifier = Modifier.padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                        onClick = {
+                            state.start()
+                            state.view = "Refresh"
+                        }
+                    ) {
+                        Text("Refresh followers")
+                    }
+                }
+
+                Button(
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { state.dropDownState = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Servers"
+                    )
+                    Text("select server")
+                }
+
+                DropdownMenu(
+                    expanded = state.dropDownState,
+                    onDismissRequest = { state.dropDownState = false }
+                ) {
+                    state.configMap.forEach { configPair ->
+                        DropdownMenuItem(
+                            onClick = {
+                                state.dropDownState = false
+                                state.selectedConfig = configPair
+                            }
+                        ) {
+                            Text(configPair.first)
+                        }
+                    }
+                    DropdownMenuItem(
+                        onClick = {
+                            state.view = "Add server"
+                            state.dropDownState = false
+                        }
+                    ) {
+                        Text("Add new server")
+                    }
+                }
+
+            }
+            Row(
+                modifier = Modifier
+                    .border(width = 2.dp, color = Color.Magenta)
+                    .background(Color.White).fillMaxWidth()
+            ) {
+                Text(
+                    "Selected server: " +
+                            (state.selectedConfig?.first ?: "select server from dropdown"),
+                    fontSize = TextUnit(20f, TextUnitType.Sp)
+                )
+            }
+            if (state.view == "History")
+                historyListing(
+                    state.selectedConfig?.first ?: "No Server",
+                    state.name,
+                    state.time,
+                    state,
+                    onNameChange = { state.name = it },
+                    onTimeChange = { state.time = it },
+                )
+            if (state.view == "About") aboutView()
+            if (state.view == "Refresh") {
+                refreshView(state)
+            }
+        }
     }
 }
 

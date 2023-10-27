@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.*
+import org.osprey.trunkfriends.ui.UIState
 import org.osprey.trunkfriends.util.mapper
 import java.net.URI
 import java.net.URLEncoder
@@ -125,11 +126,15 @@ class MastodonApi(
             ).body().toString()
 
 
-    override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit): List<UserClass> {
+    override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit, state : UIState): List<UserClass> {
+        var followCount = 0
+        state.feedback = "Refreshed : $followCount"
         val follow = mutableListOf<UserClass>()
         var list = findUserPage(0, userId, direction, funk)
         follow.addAll(list.first)
         while (list.second != 0L) {
+            followCount += 80
+            state.feedback = "Refreshed : $followCount"
             list = findUserPage(list.second, userId, direction, funk)
             follow.addAll(list.first)
         }

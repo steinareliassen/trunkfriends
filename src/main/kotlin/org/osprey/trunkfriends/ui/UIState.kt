@@ -12,6 +12,8 @@ import org.osprey.trunkfriends.historyhandler.refresh
 class UIState(var configMap: List<Pair<String, Config>>) {
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
     var dropDownState by mutableStateOf(false)
+    var feedback by mutableStateOf("Refreshing")
+    var historyDropdownState by mutableStateOf(false)
     var name by mutableStateOf("")
     var time by mutableStateOf(0L)
     var view by mutableStateOf("History")
@@ -23,11 +25,12 @@ class UIState(var configMap: List<Pair<String, Config>>) {
 
     fun start() {
         if (refreshActive) return
+        val uiState = this
         refreshActive = true
         coroutineScope.launch {
             activeButtons = false
             refreshText = "Starting fetch\n"
-            refresh {
+            refresh(uiState, selectedConfig ?: throw IllegalStateException("Should not be null")) {
                 refreshText += it+"\n"
             }
             refreshActive = false
