@@ -5,8 +5,6 @@ import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.ui.dto.HistoryCard
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
-import java.security.MessageDigest
-import java.util.*
 
 class HistoryHandler {
 
@@ -121,33 +119,4 @@ class HistoryHandler {
         }
     }
 
-    fun writeMessyHistory(historyLines: List<Pair<CurrentUser, String>>) {
-        File("messdatafile.dmp").renameTo(File("messdatafile.dmp.${System.currentTimeMillis()}"))
-        File("messdatafile.dmp").printWriter().use { pw ->
-            historyLines.forEach {
-                pw.println(it.second + mapper.writeValueAsString(it.first))
-            }
-        }
-    }
-
-}
-
-fun main() {
-    val corrupted = HistoryHandler().readHistory("tech.lgbt/lettosprey").map { (curr, stri) ->
-        val split = curr.acct.split("@")
-        val username = curr.username
-        (curr.copy(
-            username = String(
-                Base64.getEncoder().encode(
-                    MessageDigest.getInstance("MD5").digest(username.toByteArray())
-                )
-            ).replace("=", ""),
-            acct = String(
-                Base64.getEncoder().encode(
-                    MessageDigest.getInstance("MD5").digest(split[0].toByteArray())
-                )
-            ).replace("=", "") + (if (split.size > 1) "@${split[1]}" else "")
-        ) to stri)
-    }
-    HistoryHandler().writeMessyHistory(corrupted)
 }

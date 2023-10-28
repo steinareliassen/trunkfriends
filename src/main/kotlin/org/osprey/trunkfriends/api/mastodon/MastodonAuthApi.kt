@@ -1,7 +1,5 @@
 package org.osprey.trunkfriends.api.mastodon
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.util.mapper
 import java.net.URI
@@ -53,12 +51,6 @@ class MastodonAuthApi {
             HttpResponse.BodyHandlers.ofString()
         )
 
-        val mapper = jacksonObjectMapper()
-            .configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-            )
-
         return mapper.readValue(response.body(), TokenInfo::class.java).accessToken
     }
 
@@ -84,12 +76,6 @@ class MastodonAuthApi {
                 .build(),
             HttpResponse.BodyHandlers.ofString()
         )
-
-        val mapper = jacksonObjectMapper()
-            .configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-            )
 
         return mapper.readValue(response.body(), ClientInfo::class.java)
     }

@@ -1,7 +1,5 @@
 package org.osprey.trunkfriends.api.mastodon
 
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.config.Config
@@ -9,11 +7,9 @@ import org.osprey.trunkfriends.historyhandler.*
 import org.osprey.trunkfriends.ui.UIState
 import org.osprey.trunkfriends.util.mapper
 import java.net.URI
-import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
 import kotlin.jvm.optionals.getOrNull
 
 class MastodonApi(
@@ -32,88 +28,6 @@ class MastodonApi(
             ).body(),
             UserClass::class.java
         ).id
-
-    fun obtainToken(domain: String,
-                    clientId: String,
-                    clientSecret: String,
-                    code: String) : String {
-        val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder()
-                .uri(URI.create("https://${domain}/oauth/token"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .method("POST",
-                    HttpRequest
-                        .BodyPublishers
-                        .ofString(
-                            getFormDataAsString(
-                                mapOf(
-                                    "client_id" to clientId,
-                                    "client_secret" to clientSecret,
-                                    "redirect_uri" to "urn:ietf:wg:oauth:2.0:oob",
-                                    "grant_type" to "authorization_code",
-                                    "code" to code,
-                                    "scope" to "read"
-                                )
-                            )
-                        )
-                )
-                .build(),
-            HttpResponse.BodyHandlers.ofString()
-        )
-
-        val mapper = jacksonObjectMapper()
-            .configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-            )
-
-        return mapper.readValue(response.body(), TokenInfo::class.java).accessToken
-    }
-
-    fun registerClient(domain: String) : ClientInfo {
-        val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder()
-                .uri(URI.create("https://${domain}/api/v1/apps"))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .method("POST",
-                    HttpRequest
-                        .BodyPublishers
-                        .ofString(
-                            getFormDataAsString(
-                                mapOf(
-                                    "client_name" to "Trunkfriends",
-                                    "redirect_uris" to "urn:ietf:wg:oauth:2.0:oob",
-                                    "scopes" to "read",
-                                    "website" to "https://github.com/steinareliassen/trunkfriends"
-                                )
-                            )
-                        )
-                )
-                .build(),
-            HttpResponse.BodyHandlers.ofString()
-        )
-
-        val mapper = jacksonObjectMapper()
-            .configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-            )
-
-        return mapper.readValue(response.body(), ClientInfo::class.java)
-    }
-
-    private fun getFormDataAsString(formData: Map<String, String>): String {
-        val formBodyBuilder = StringBuilder()
-        for ((key, value) in formData) {
-            if (formBodyBuilder.isNotEmpty()) {
-                formBodyBuilder.append("&")
-            }
-            formBodyBuilder.append(URLEncoder.encode(key, StandardCharsets.UTF_8))
-            formBodyBuilder.append("=")
-            formBodyBuilder.append(URLEncoder.encode(value, StandardCharsets.UTF_8))
-        }
-        return formBodyBuilder.toString()
-    }
 
     fun pingUser(domain: String, user: String) =
             HttpClient.newHttpClient().send(
@@ -146,12 +60,8 @@ class MastodonApi(
         val currentUsers = mutableMapOf<String, CurrentUser>()
 
         followers.forEach {
-            currentUsers[it.acct] = CurrentUser(
-                following = false,
-                follower = true,
-                it.acct,
-                it.username
-            )
+            currentUsers[it.acct] =
+                CurrentUser(following = false, follower = true, it.acct, it.username)
         }
 
         following.forEach {
@@ -160,11 +70,8 @@ class MastodonApi(
                     following = true
                 ) ?: throw IllegalStateException("nope")
             } else {
-                currentUsers[it.acct] = CurrentUser(
-                    following = true,
-                    follower = false,
-                    it.acct,
-                    it.username
+                currentUsers[it.acct] =
+                    CurrentUser(following = true, follower = false, it.acct, it.username
                 )
             }
         }
@@ -185,13 +92,6 @@ class MastodonApi(
             .build()
 
         val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
-
-        val mapper = jacksonObjectMapper()
-            .configure(
-                DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                false
-            )
-
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
 
         funk("$direction page $start")
@@ -211,7 +111,6 @@ class MastodonApi(
             // this is ok, ignore
         }
         return Pair(users, 0L)
-
     }
 
 }

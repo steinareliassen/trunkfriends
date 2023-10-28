@@ -11,22 +11,24 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 fun aboutView() {
+    Text("\n")
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
-            .background(Color.Gray)
+            .background(colorTwo)
             .verticalScroll(rememberScrollState())
     ) {
        Row {
             Text(
                 """
-Trunk Friends is a simple friends tracking software.
+Trunk Friends is a simple application to help you track friends on the fediverse.
 
-It is free, use "as is" software.
+It is free, use "as is" software, still in alpha-state. This means it is not seen as stable
+and tested enough to be considered finished. Though it should still be usable, and it has
+been put out as we continue to read about people loosing connection to friends and followers
+because of defederation, but have a hard time tracking who they lost. 
 
-This is still incomplete, though still usable software. 
-
-This is public domain, no copyrights reserved, no warranty given.
+This software is public domain, no copyrights reserved, no warranty given.
 
 https://github.com/steinareliassen/trunkfriends
         """.trimIndent(), color = Color.Black

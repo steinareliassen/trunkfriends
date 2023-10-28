@@ -39,49 +39,18 @@ fun historyListing(
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
-            .background(Color.Gray)
             .verticalScroll(rememberScrollState())
     ) {
 
         val history = HistoryHandler().readHistory(serverUser)
-        Row(modifier = Modifier.background(Color.Gray).fillMaxWidth()) {
-
+        Row(modifier = Modifier.fillMaxWidth()) {
             if (history.isNotEmpty() && state.name.isEmpty()) {
-                Button(
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = { state.historyDropdownState = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Servers"
-                    )
-                    Text("select timeslot")
+                CommonIconButton(text = "select timeslot", icon = Icons.Default.MoreVert) {
+                    state.historyDropdownState = true
                 }
-
-                Button(
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = { }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Previous"
-                    )
-                    Text("Previous")
+                CommonIconButton(text = "Previous", icon = Icons.Default.ArrowBack) {
                 }
-
-                Button(
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = { }
-                ) {
-                    Text("Next")
-                    Icon(
-                        imageVector = Icons.Default.ArrowForward,
-                        contentDescription = "Next"
-                    )
-
+                CommonIconButton(text = "Next", icon = Icons.Default.ArrowForward, iconBefore = false) {
                 }
             }
 
@@ -114,7 +83,7 @@ fun historyListing(
                     .padding(4.dp)
                     .align(Alignment.CenterHorizontally)
             ) {
-                Column {
+                Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
                     Row(modifier = Modifier.align(Alignment.Start)) {
                         followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
                         infoCard(timestampToDateString(it.timeStamp), it.acct, it.username)
@@ -167,11 +136,11 @@ fun followCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean,
         elevation = 3.dp,
         border = BorderStroke(
             width = 1.dp,
-            color = Color.LightGray
+            color = Color(0xB3, 0xB4, 0x92, 0xFF)
         ),
         modifier = Modifier.padding(Dp(4F)).width(100.dp)
     ) {
-        Column {
+        Column(modifier = Modifier.background(Color.White)) {
             Row {
                 Text("\uD83E\uDEF5")
                 if (prevFollower != follower) {
