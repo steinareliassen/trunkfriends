@@ -10,13 +10,15 @@ import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
 
 class UIState(var configMap: List<Pair<String, Config>>) {
+    var page by mutableStateOf(0)
+    var timeslotPage by mutableStateOf(0)
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
     var dropDownState by mutableStateOf(false)
     var feedback by mutableStateOf("Refreshing")
     var historyDropdownState by mutableStateOf(false)
     var name by mutableStateOf("")
     var time by mutableStateOf(0L)
-    var view by mutableStateOf("History")
+    var view by mutableStateOf("About")
     var refreshText by mutableStateOf("\n\nRefreshing followers / following list, please wait\n\nStarting fetch\n")
     var activeButtons by mutableStateOf(true)
 

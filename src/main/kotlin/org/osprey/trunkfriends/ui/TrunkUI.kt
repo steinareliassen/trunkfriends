@@ -55,7 +55,6 @@ fun App(state : UIState) {
                         state.view = "History"
                     }
                     CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
-                        state.start()
                         state.view = "Refresh"
                     }
                 }
@@ -81,6 +80,11 @@ fun App(state : UIState) {
                             onClick = {
                                 state.dropDownState = false
                                 state.selectedConfig = configPair
+                                state.time = 0L
+                                state.page = 0
+                                state.timeslotPage = 0
+                                state.name = ""
+                                state.view = "History"
                             }
                         ) {
                             Text(configPair.first)
@@ -89,6 +93,10 @@ fun App(state : UIState) {
                     DropdownMenuItem(
                         onClick = {
                             state.view = "Add server"
+                            state.time = 0L
+                            state.page = 0
+                            state.timeslotPage = 0
+                            state.name = ""
                             state.dropDownState = false
                         }
                     ) {

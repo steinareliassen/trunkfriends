@@ -36,64 +36,111 @@ fun historyListing(
                 this.substring(0..this.length - 4).replace("T", " ")
             }
 
+    val history = HistoryHandler().readHistory(serverUser)
+
+    if (history.isNotEmpty() && state.time == 0L) {
+        state.time = history.map { (_, control) ->
+            control.substring(0, control.length - 3).toLong()
+        }.max()
+        state.timeslotPage = history.map { (_, control) ->
+            control.substring(0, control.length - 3).toLong()
+        }.distinct().size-1
+        return
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
             .verticalScroll(rememberScrollState())
     ) {
 
-        val history = HistoryHandler().readHistory(serverUser)
+        if (history.isEmpty()) {
+            Text("\n")
+            BannerRow("""
+You do not seem to have imported the followers / following list from the mastodon 
+instance. Click on "Refresh followers" and start importing. If you have a large
+amount of followers, this can take some time, as we do not want to swamp the
+server with requests. Once followers are imported, you will be see them here.
+            """.trimIndent())
+            return
+        }
+        val timeslots = history.map { (_, control) ->
+            control.substring(0, control.length - 3).toLong()
+        }.distinct()
+
         Row(modifier = Modifier.fillMaxWidth()) {
             if (history.isNotEmpty() && state.name.isEmpty()) {
                 CommonIconButton(text = "select timeslot", icon = Icons.Default.MoreVert) {
                     state.historyDropdownState = true
                 }
-                CommonIconButton(text = "Previous", icon = Icons.Default.ArrowBack) {
-                }
-                CommonIconButton(text = "Next", icon = Icons.Default.ArrowForward, iconBefore = false) {
-                }
+                if (state.timeslotPage > 0)
+                    CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
+                        state.timeslotPage--
+                        state.time = timeslots[state.timeslotPage]
+                        state.page = 0
+                    }
+                CommonButton(enabled = false, text = "${state.timeslotPage+1}/${timeslots.size}") {}
+                if (state.timeslotPage < timeslots.size-1)
+                    CommonIconButton(text = "Next timeslot", icon = Icons.Default.ArrowForward, iconBefore = false) {
+                        state.timeslotPage++
+                        state.time = timeslots[state.timeslotPage]
+                        state.page = 0
+                    }
             }
-
         }
+
         DropdownMenu(
             expanded = state.historyDropdownState,
             onDismissRequest = { state.historyDropdownState = false }
         ) {
 
-            history.map { (_, control) ->
-                control.substring(0, control.length - 3).toLong()
-            }.distinct().forEach {
+            timeslots.forEachIndexed { i, time ->
                 DropdownMenuItem(
                     onClick = {
-                        onTimeChange(it)
+                        onTimeChange(time)
+                        state.timeslotPage = i
+                        state.page = 0
                         state.historyDropdownState = false
                     }
                 ) {
-                    Text(timestampToDateString(it))
+                    Text(timestampToDateString(time))
                 }
             }
         }
 
-        HistoryHandler().createHistoryCards(history).forEach {
-            if ((name == "" && time == it.timeStamp) || name == it.acct) Card(
-                elevation = Dp(4F),
-                modifier = Modifier
-                    .width(740.dp)
-                    .wrapContentHeight()
-                    .padding(4.dp)
-                    .align(Alignment.CenterHorizontally)
-            ) {
-                Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                    Row(modifier = Modifier.align(Alignment.Start)) {
-                        followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
-                        infoCard(timestampToDateString(it.timeStamp), it.acct, it.username)
-                        zoomButton(text = "\uD83D\uDD0D") {
-                            if (name == "") onNameChange(it.acct) else onNameChange("")
+        HistoryHandler().createHistoryCards(history).filter {
+            ((name == "" && time == it.timeStamp) || name == it.acct)
+        }.chunked(7).apply {
+            drop(state.page).first().forEach {
+                Card(
+                    elevation = Dp(2F),
+                    modifier = Modifier
+                        .width(740.dp)
+                        .wrapContentHeight()
+                        .padding(2.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                        Row(modifier = Modifier.align(Alignment.Start)) {
+                            followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
+                            infoCard(timestampToDateString(it.timeStamp), it.acct, it.username)
+                            zoomButton(text = "\uD83D\uDD0D") {
+                                if (name == "") onNameChange(it.acct) else onNameChange("")
+                            }
                         }
                     }
                 }
             }
+            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                if (state.page > 0) CommonButton(text = "<< prev page") {
+                    state.page--
+                }
+                CommonButton(enabled = false, text = "${state.page+1}/${size}") {}
+                if (state.page < size-1) CommonButton(text = "next page >>") {
+                    state.page++
+                }
+            }
         }
+
     }
 }
 
