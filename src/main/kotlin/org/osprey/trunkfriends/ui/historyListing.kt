@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import java.time.Instant
 import java.time.ZoneId
@@ -121,11 +122,8 @@ server with requests. Once followers are imported, you will be see them here.
                 ) {
                     Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
                         Row(modifier = Modifier.align(Alignment.Start)) {
-                            followCard(it.prevFollower, it.follower, it.prevFollowing, it.following)
-                            infoCard(timestampToDateString(it.timeStamp), it.acct, it.username)
-                            zoomButton(text = "\uD83D\uDD0D") {
-                                if (name == "") onNameChange(it.acct) else onNameChange("")
-                            }
+                            followCard(it.prevFollower, it.follower, it.prevFollowing, it.following, it.acct)
+
                         }
                     }
                 }
@@ -170,43 +168,68 @@ fun zoomButton(text: String, onClick: () -> Unit) {
                 backgroundColor = Color.White,
                 contentColor = Color.Black
             ),
-        modifier = Modifier.padding(0.dp),
-        onClick = { onClick() }
+        modifier = Modifier.padding(0.dp).height(25.dp).width(100.dp),
+        onClick = { onClick() },
     ) {
-        Text(text)
+        Text(text, fontSize = 7.sp)
     }
 }
 
 @Composable
-fun followCard(prevFollower: Boolean, follower: Boolean, prevFollowing: Boolean, following: Boolean) {
+fun followCard(
+    prevFollower: Boolean,
+    follower: Boolean,
+    prevFollowing: Boolean,
+    following: Boolean,
+    account: String
+) {
     Card(
         elevation = 3.dp,
         border = BorderStroke(
             width = 1.dp,
             color = Color(0xB3, 0xB4, 0x92, 0xFF)
         ),
-        modifier = Modifier.padding(Dp(4F)).width(100.dp)
+        modifier = Modifier.padding(Dp(4F)).width(670.dp).height(25.dp)
     ) {
-        Column(modifier = Modifier.background(Color.White)) {
-            Row {
-                Text("\uD83E\uDEF5")
-                if (prevFollower != follower) {
-                    if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
-                        "\uD83D\uDFE2 ➡",
-                        color = Color.Blue
-                    )
+        Row {
+            Column(
+                modifier = Modifier.background(Color.White)
+            ) {
+                Row(modifier = Modifier.width(200.dp)) {
+                    Column {
+                        Row(modifier = Modifier.width(100.dp)) {
+                            Text("\uD83E\uDEF5")
+                            if (prevFollower != follower) {
+                                if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                                    "\uD83D\uDFE2 ➡",
+                                    color = Color.Blue
+                                )
+                            }
+                            if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
+                        }
+                    }
+                    Column {
+                        Row(modifier = Modifier.width(100.dp)) {
+                            Text("\uD83D\uDC49")
+                            if (prevFollowing != following) {
+                                if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                                    "\uD83D\uDFE2 ➡",
+                                    color = Color.Blue
+                                )
+                            }
+                            if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
+                                "\uD83D\uDD34",
+                                color = Color.Red
+                            )
+                        }
+                    }
                 }
-                if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
             }
-            Row {
-                Text("\uD83D\uDC49")
-                if (prevFollowing != following) {
-                    if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
-                        "\uD83D\uDFE2 ➡",
-                        color = Color.Blue
-                    )
-                }
-                if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
+            Column {
+                Text(text = account)
+            }
+            zoomButton(text = "\uD83D\uDD0D") {
+                //if (name == "") onNameChange(it.acct) else onNameChange("")
             }
         }
     }
