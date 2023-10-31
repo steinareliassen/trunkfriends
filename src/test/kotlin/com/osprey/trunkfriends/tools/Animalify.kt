@@ -58,11 +58,11 @@ fun main() {
             val animal = toAnimal(servername, username)
             println(animal)
             (copy(
-                username = animal.first,
-                acct = animal.second +"@$servername"
+                username = animal.second,
+                acct = animal.first +"@$servername"
             ) to stri)
         }
     }
 
-    //writeMessyHistory(corrupted)
+    writeMessyHistory(corrupted)
 }

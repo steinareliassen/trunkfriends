@@ -1,42 +1,22 @@
 
 # Trunkfriends
 
-## Upgrading from previous version of TrunkFriends
-
-Keep the folder from the previous installation, and install
-and run the new version. Create a connection to the server using
-"add server". Trunkfriends will create a folder called 
-".trunkfriends" in your home directory, containing subfolder
-for the servername and within this, a subfolder for username.
-
-Quit trunkfriends.
-
-Copy "datafile.dmp" from the previous installation folder to 
-this folder. Start trunkfriends again. Select the server, and 
-the previously imported data should be there.
-
 ## Important Information
-
-Trunk Friends is NOT something close to be considered ready. I am making this
-public now, so people can use it if they want. You need to build the project
-locally before running it, binary builds will come when more of the configuration
-is completed.
-
 
 This is public domain, comes with no warranty, use as is. The code is
 currently a complete mess, and suffers greatly from the fact that I have
 not made any UI in decades and have no experience with Jetpack Compose
 prior to making this. 
 
-You need to know how to fetch bearer token from browser to use this. If you do 
-not know how to do that, please revisit this page in a few days, and instrutions
-will be added.
+Trunkfriends stores its data in a folder ".trunkfriends" on the users home
+directory. As this software is very much in an alpha state and can potentially
+contain bugs, it is recommended you backup this folder from time to time, 
+in case anything  should happen.
 
 ## What is TrunkFriends
 
 I started writing TrunkFriends as a result of suddenly being disconnected 
-from a friend when the server I was on,
-defederated the server they were on.
+from a friend when the server I was on, defederated the server they were on.
 
 I decided I needed a little tool that could make me aware of similar things
 happening in the future, so I would not loose touch with friends just because
@@ -44,8 +24,14 @@ of defederation. Of course, our servers were still not communicating, but
 I could find other ways to reach them. The important part was to be aware
 
 Given that I had a few other issues with some shortcomings of the Mastodon UI
-in regards to how the friends UI is working, I thought I could combine the ideas
+in regard to how the friends UI is working, I thought I could combine the ideas
 into one app that may be helpful.
+
+## Installing Trunkfriends
+
+[Installing from source](docs/installing_source.md)
+
+Installation packages will be added shortly.
 
 ## What does TrunkFriends do?
 
@@ -71,27 +57,6 @@ client for Mastodon. However, the software is written to be flexible, and it sho
 be pretty straight forward to implement support for instance for Firefish. This may
 come soon.
 
-## Building Trunk Friends
-
-Clone the repository or download the code from github.
-
-Make sure you have Java SDK installed, version 17 or higher.
-
-Open a terminal / command prompt, and run "gradlew build". This will build Trunk Friends
-on windows: gradlew.bat build
-on *nix systems: ./gradlew build
-
-Create a copy of the file "config.json.example" called "config.json"
-
-Edit the config.json file, enter the host name of your mastodon instance 
-(replace mastodon.social, unless you use mastodon.social), and insert your 
-bearer token. You need to fetch bearer token from a logged-in session with your
-mastodon server. More info on how to do that will follow.
-
-Start trunk friends by typing:
-on windows: gradlew.bat run
-on *nix systems: ./gradlew run
-
 ## Using Trunk Friends
 
 First time, the view will be rather empty. Press "Refresh against server" to start 
@@ -100,8 +65,6 @@ and switch back to the list view. You can here see anyone you follow, and anyone
 you. Finger pointing at you means status if they follow you, finger pointing right
 means that you follow them, green means they follow / you follow, red means you don't follow /
 they don't follow you.
-
-The result of this is stored in a file called "datafile.dmp".
 
 Next time you press "refresh against serer", Trunk Friends will compare the result against
 previous run, and add any changes to the end of the list.

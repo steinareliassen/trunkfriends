@@ -42,13 +42,13 @@ class MastodonApi(
 
     override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit, state : UIState): List<UserClass> {
         var followCount = 0
-        state.feedback = "Refreshed : $followCount"
+        state.feedback = "$direction fetched: $followCount"
         val follow = mutableListOf<UserClass>()
         var list = findUserPage(0, userId, direction, funk)
         follow.addAll(list.first)
         while (list.second != 0L) {
-            followCount += 80
-            state.feedback = "Refreshed : $followCount"
+            followCount += 40
+            state.feedback = "$direction fetched: $followCount"
             list = findUserPage(list.second, userId, direction, funk)
             follow.addAll(list.first)
         }
@@ -80,12 +80,11 @@ class MastodonApi(
     }
 
     private suspend fun findUserPage(start: Long, id: String, direction: String, funk : (String) -> Unit): Pair<Array<UserClass>, Long> {
+        val startPoint = if (start != 0L) "?max_id=$start" else ""
+        val uri = "https://${config.server}/api/v1/accounts/${id}/$direction$startPoint"
         val request = HttpRequest.newBuilder()
             .uri(
-                URI.create(
-                    "https://${config.server}/api/v1/accounts/${id}/$direction" +
-                            if (start != 0L) "?max_id=$start" else ""
-                )
+                URI.create(uri)
             )
             .header("Authorization", config.bearer)
             .method("GET", HttpRequest.BodyPublishers.noBody())

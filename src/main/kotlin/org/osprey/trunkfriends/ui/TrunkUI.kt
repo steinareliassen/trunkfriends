@@ -156,7 +156,7 @@ fun main() = application {
                 )
             } else null
         }
-    }
+    } as MutableList<Pair<String, Config>>
 
     Window(
         onCloseRequest = ::exitApplication,

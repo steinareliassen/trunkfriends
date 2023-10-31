@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
 
-class UIState(var configMap: List<Pair<String, Config>>) {
+class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var page by mutableStateOf(0)
     var timeslotPage by mutableStateOf(0)
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
@@ -37,6 +37,8 @@ class UIState(var configMap: List<Pair<String, Config>>) {
             }
             refreshActive = false
             activeButtons = true
+            view = "History"
+            time = 0L
         }
     }
 

@@ -45,7 +45,7 @@ fun historyListing(
         }.max()
         state.timeslotPage = history.map { (_, control) ->
             control.substring(0, control.length - 3).toLong()
-        }.distinct().size-1
+        }.distinct().size - 1
         return
     }
     Column(
@@ -56,12 +56,14 @@ fun historyListing(
 
         if (history.isEmpty()) {
             Text("\n")
-            BannerRow("""
+            BannerRow(
+                """
 You do not seem to have imported the followers / following list from the mastodon 
 instance. Click on "Refresh followers" and start importing. If you have a large
 amount of followers, this can take some time, as we do not want to swamp the
 server with requests. Once followers are imported, you will be see them here.
-            """.trimIndent())
+            """.trimIndent(), 16f
+            )
             return
         }
         val timeslots = history.map { (_, control) ->
@@ -70,7 +72,7 @@ server with requests. Once followers are imported, you will be see them here.
 
         Row(modifier = Modifier.fillMaxWidth()) {
             if (history.isNotEmpty() && state.name.isEmpty()) {
-                CommonIconButton(text = "select timeslot", icon = Icons.Default.MoreVert) {
+                CommonIconButton(text = timestampToDateString(state.time), icon = Icons.Default.MoreVert) {
                     state.historyDropdownState = true
                 }
                 if (state.timeslotPage > 0)
@@ -79,8 +81,8 @@ server with requests. Once followers are imported, you will be see them here.
                         state.time = timeslots[state.timeslotPage]
                         state.page = 0
                     }
-                CommonButton(enabled = false, text = "${state.timeslotPage+1}/${timeslots.size}") {}
-                if (state.timeslotPage < timeslots.size-1)
+                CommonButton(enabled = false, text = "${state.timeslotPage + 1}/${timeslots.size}") {}
+                if (state.timeslotPage < timeslots.size - 1)
                     CommonIconButton(text = "Next timeslot", icon = Icons.Default.ArrowForward, iconBefore = false) {
                         state.timeslotPage++
                         state.time = timeslots[state.timeslotPage]
@@ -110,30 +112,30 @@ server with requests. Once followers are imported, you will be see them here.
 
         HistoryHandler().createHistoryCards(history).filter {
             ((name == "" && time == it.timeStamp) || name == it.acct)
-        }.chunked(7).apply {
-            drop(state.page).first().forEach {
-                Card(
-                    elevation = Dp(2F),
-                    modifier = Modifier
-                        .width(740.dp)
-                        .wrapContentHeight()
-                        .padding(2.dp)
-                        .align(Alignment.CenterHorizontally)
-                ) {
-                    Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+        }.chunked(14).apply {
+            Card(
+                elevation = Dp(2F),
+                modifier = Modifier
+                    .width(740.dp)
+                    .wrapContentHeight()
+                    .padding(2.dp)
+                    .align(Alignment.CenterHorizontally)
+            ) {
+                Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                    drop(state.page).first().forEach {
                         Row(modifier = Modifier.align(Alignment.Start)) {
                             followCard(it.prevFollower, it.follower, it.prevFollowing, it.following, it.acct)
-
                         }
                     }
                 }
             }
+
             Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 if (state.page > 0) CommonButton(text = "<< prev page") {
                     state.page--
                 }
-                CommonButton(enabled = false, text = "${state.page+1}/${size}") {}
-                if (state.page < size-1) CommonButton(text = "next page >>") {
+                CommonButton(enabled = false, text = "${state.page + 1}/${size}") {}
+                if (state.page < size - 1) CommonButton(text = "next page >>") {
                     state.page++
                 }
             }
@@ -184,12 +186,12 @@ fun followCard(
     account: String
 ) {
     Card(
-        elevation = 3.dp,
+        elevation = 1.dp,
         border = BorderStroke(
             width = 1.dp,
             color = Color(0xB3, 0xB4, 0x92, 0xFF)
         ),
-        modifier = Modifier.padding(Dp(4F)).width(670.dp).height(25.dp)
+        modifier = Modifier.padding(Dp(1F)).width(740.dp).height(23.dp)
     ) {
         Row {
             Column(
@@ -205,7 +207,10 @@ fun followCard(
                                     color = Color.Blue
                                 )
                             }
-                            if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text("\uD83D\uDD34", color = Color.Red)
+                            if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
+                                "\uD83D\uDD34",
+                                color = Color.Red
+                            )
                         }
                     }
                     Column {
@@ -226,7 +231,9 @@ fun followCard(
                 }
             }
             Column {
+                Row(modifier = Modifier.width(500.dp)) {
                 Text(text = account)
+                }
             }
             zoomButton(text = "\uD83D\uDD0D") {
                 //if (name == "") onNameChange(it.acct) else onNameChange("")

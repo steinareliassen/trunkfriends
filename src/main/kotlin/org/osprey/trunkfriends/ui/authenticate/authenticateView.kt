@@ -77,7 +77,7 @@ text, only press the "Copy URL" button".
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     modifier = Modifier.width(500.dp),
-                    value = state.url.substring(0..if (state.url.length < 20) state.url.length - 1 else 20),
+                    value = state.url.substring(0..if (state.url.length < 50) state.url.length - 1 else 50),
                     onValueChange = {},
                     label = { Text("Copy this URL and paste it in a browser logged in with your account") }
                 )
@@ -149,8 +149,9 @@ on this account.
                         Files.createDirectory(serverPath)
                     }
 
+                    val configKey = "${state.domain}/${userClass.acct}"
                     val configPath = FileUtils.getUserDirectoryPath() +
-                            "/.trunkfriends/${state.domain}/${userClass.acct}";
+                            "/.trunkfriends/$configKey";
                     val userPath = Paths.get(configPath)
 
                     if (!Files.exists(userPath)) {
@@ -160,7 +161,11 @@ on this account.
                     File("$configPath/config.json").printWriter().use { pw ->
                         pw.println(mapper.writeValueAsString(config))
                     }
-
+                    uiState.view = "History"
+                    uiState.configMap.add(
+                        (configKey to config )
+                    )
+                    uiState.selectedConfig = (configKey to config )
                 }
 
             }

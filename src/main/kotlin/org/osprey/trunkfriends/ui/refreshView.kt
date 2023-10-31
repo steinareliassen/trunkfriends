@@ -21,6 +21,17 @@ import androidx.compose.ui.unit.dp
 fun refreshView(state: UIState) {
     Text("\n")
 
+    BannerRow(
+        """
+You can now start importing your followers / following list by pressing the button below. It fetches about 1200
+followers per minute, so you can do a rough calculation on how long time it will take, and get yourself a cup of
+coffee while you wait, if the wait is too long. The delay is to prevent the mastodon instance from being flooded
+with requests. Most instances have a max request pr 5 minute interval.
+                        """.trimIndent(),
+        16f
+    )
+    Text("\n")
+
     if (!state.activeButtons) {
         Column(
             modifier = Modifier
