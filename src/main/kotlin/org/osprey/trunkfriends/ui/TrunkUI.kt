@@ -27,20 +27,20 @@ import java.nio.file.Paths
 fun App(state : UIState) {
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
         if (state.view == "Add server") authenticateView(remember { AuthState() }, state)
-        else if(state.name.isNotEmpty()) {
+        else if(state.zoomedName != null) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 CommonButton(
                     text = "Clear search"
                 ) {
-                    state.name = ""
+                    state.zoomedName = null
                 }
             }
             historyListing(
                 state.selectedConfig?.first ?: "No Server",
-                state.name,
+                state.zoomedName,
                 state.time,
                 state,
-                onNameChange = { state.name = it },
+                onNameChange = { state.zoomedName = it },
                 onTimeChange = { state.time = it },
             )
         }
@@ -78,13 +78,7 @@ fun App(state : UIState) {
                     state.configMap.forEach { configPair ->
                         DropdownMenuItem(
                             onClick = {
-                                state.dropDownState = false
-                                state.selectedConfig = configPair
-                                state.time = 0L
-                                state.page = 0
-                                state.timeslotPage = 0
-                                state.name = ""
-                                state.view = "History"
+                                state.onServerSelect("History", configPair)
                             }
                         ) {
                             Text(configPair.first)
@@ -92,12 +86,7 @@ fun App(state : UIState) {
                     }
                     DropdownMenuItem(
                         onClick = {
-                            state.view = "Add server"
-                            state.time = 0L
-                            state.page = 0
-                            state.timeslotPage = 0
-                            state.name = ""
-                            state.dropDownState = false
+                            state.onServerSelect("Add server", null)
                         }
                     ) {
                         Text("Add new server")
@@ -114,10 +103,10 @@ fun App(state : UIState) {
             if (state.view == "History")
                 historyListing(
                     state.selectedConfig?.first ?: "No Server",
-                    state.name,
+                    state.zoomedName,
                     state.time,
                     state,
-                    onNameChange = { state.name = it },
+                    onNameChange = { state.zoomedName = it },
                     onTimeChange = { state.time = it },
                 )
             if (state.view == "About") aboutView()

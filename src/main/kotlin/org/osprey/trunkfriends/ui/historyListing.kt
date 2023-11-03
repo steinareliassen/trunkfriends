@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
+import org.osprey.trunkfriends.ui.dto.HistoryCard
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -23,10 +24,10 @@ import java.util.*
 @Composable
 fun historyListing(
     serverUser: String,
-    name: String,
+    zoomedName: String?,
     time: Long,
     state: UIState,
-    onNameChange: (String) -> Unit,
+    onNameChange: (String?) -> Unit,
     onTimeChange: (Long) -> Unit
 ) {
     fun timestampToDateString(timestamp: Long) =
@@ -71,7 +72,7 @@ server with requests. Once followers are imported, you will be see them here.
         }.distinct()
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            if (history.isNotEmpty() && state.name.isEmpty()) {
+            if (history.isNotEmpty() && state.zoomedName == null) {
                 CommonIconButton(text = timestampToDateString(state.time), icon = Icons.Default.MoreVert) {
                     state.historyDropdownState = true
                 }
@@ -111,8 +112,8 @@ server with requests. Once followers are imported, you will be see them here.
         }
 
         HistoryHandler().createHistoryCards(history).filter {
-            ((name == "" && time == it.timeStamp) || name == it.acct)
-        }.chunked(14).apply {
+            ((zoomedName == null && time == it.timeStamp) || zoomedName == it.acct)
+        }.chunked(if (zoomedName == null) 14 else 8).apply {
             Card(
                 elevation = Dp(2F),
                 modifier = Modifier
@@ -122,9 +123,16 @@ server with requests. Once followers are imported, you will be see them here.
                     .align(Alignment.CenterHorizontally)
             ) {
                 Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                    drop(state.page).first().forEach {
+                    drop(state.page).first().forEach { historyCard ->
                         Row(modifier = Modifier.align(Alignment.Start)) {
-                            followCard(it.prevFollower, it.follower, it.prevFollowing, it.following, it.acct)
+                            if (zoomedName != null) {
+                                Column {
+                                    Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
+                                    followCard(historyCard, onNameChange)
+                                }
+                            } else {
+                                followCard(historyCard, onNameChange)
+                            }
                         }
                     }
                 }
@@ -145,24 +153,6 @@ server with requests. Once followers are imported, you will be see them here.
 }
 
 @Composable
-fun infoCard(date: String, account: String, username: String) {
-    Card(
-        elevation = 3.dp,
-        border = BorderStroke(
-            width = 1.dp,
-            color = Color.LightGray
-        ),
-        modifier = Modifier.padding(Dp(4F)).width(570.dp)
-    ) {
-        Column {
-            Text(text = "⏰ $date - $username")
-            Text(text = account)
-        }
-    }
-
-}
-
-@Composable
 fun zoomButton(text: String, onClick: () -> Unit) {
     TextButton(
         colors = ButtonDefaults
@@ -179,11 +169,8 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 
 @Composable
 fun followCard(
-    prevFollower: Boolean,
-    follower: Boolean,
-    prevFollowing: Boolean,
-    following: Boolean,
-    account: String
+    historyCard: HistoryCard,
+    onNameChange: (String?) -> Unit
 ) {
     Card(
         elevation = 1.dp,
@@ -193,50 +180,52 @@ fun followCard(
         ),
         modifier = Modifier.padding(Dp(1F)).width(740.dp).height(23.dp)
     ) {
-        Row {
-            Column(
-                modifier = Modifier.background(Color.White)
-            ) {
-                Row(modifier = Modifier.width(200.dp)) {
-                    Column {
-                        Row(modifier = Modifier.width(100.dp)) {
-                            Text("\uD83E\uDEF5")
-                            if (prevFollower != follower) {
-                                if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
-                                    "\uD83D\uDFE2 ➡",
-                                    color = Color.Blue
+        with(historyCard) {
+            Row {
+                Column(
+                    modifier = Modifier.background(Color.White)
+                ) {
+                    Row(modifier = Modifier.width(200.dp)) {
+                        Column {
+                            Row(modifier = Modifier.width(100.dp)) {
+                                Text("\uD83E\uDEF5")
+                                if (prevFollower != follower) {
+                                    if (follower) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                                        "\uD83D\uDFE2 ➡",
+                                        color = Color.Blue
+                                    )
+                                }
+                                if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
+                                    "\uD83D\uDD34",
+                                    color = Color.Red
                                 )
                             }
-                            if (follower) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
-                                "\uD83D\uDD34",
-                                color = Color.Red
-                            )
                         }
-                    }
-                    Column {
-                        Row(modifier = Modifier.width(100.dp)) {
-                            Text("\uD83D\uDC49")
-                            if (prevFollowing != following) {
-                                if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
-                                    "\uD83D\uDFE2 ➡",
-                                    color = Color.Blue
+                        Column {
+                            Row(modifier = Modifier.width(100.dp)) {
+                                Text("\uD83D\uDC49")
+                                if (prevFollowing != following) {
+                                    if (following) Text("\uD83D\uDD34 ➡", color = Color.Black) else Text(
+                                        "\uD83D\uDFE2 ➡",
+                                        color = Color.Blue
+                                    )
+                                }
+                                if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
+                                    "\uD83D\uDD34",
+                                    color = Color.Red
                                 )
                             }
-                            if (following) Text("\uD83D\uDFE2", color = Color.Blue) else Text(
-                                "\uD83D\uDD34",
-                                color = Color.Red
-                            )
                         }
                     }
                 }
-            }
-            Column {
-                Row(modifier = Modifier.width(500.dp)) {
-                Text(text = account)
+                Column {
+                    Row(modifier = Modifier.width(500.dp)) {
+                        Text(text = acct)
+                    }
                 }
-            }
-            zoomButton(text = "\uD83D\uDD0D") {
-                //if (name == "") onNameChange(it.acct) else onNameChange("")
+                zoomButton(text = "\uD83D\uDD0D") {
+                    onNameChange(acct)
+                }
             }
         }
     }

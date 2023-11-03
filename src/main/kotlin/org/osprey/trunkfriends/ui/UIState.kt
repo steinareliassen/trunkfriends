@@ -16,7 +16,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var dropDownState by mutableStateOf(false)
     var feedback by mutableStateOf("Refreshing")
     var historyDropdownState by mutableStateOf(false)
-    var name by mutableStateOf("")
+    var zoomedName by mutableStateOf<String?>(null)
     var time by mutableStateOf(0L)
     var view by mutableStateOf("About")
     var refreshText by mutableStateOf("\n\nRefreshing followers / following list, please wait\n\nStarting fetch\n")
@@ -40,6 +40,16 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             view = "History"
             time = 0L
         }
+    }
+
+    fun onServerSelect(selectView : String, setConfig : Pair<String, Config>?) {
+        dropDownState = false
+        selectedConfig = setConfig
+        time = 0L
+        page = 0
+        timeslotPage = 0
+        zoomedName = null
+        view = selectView
     }
 
 }
