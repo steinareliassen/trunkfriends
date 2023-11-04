@@ -1,4 +1,3 @@
-
 # Trunkfriends
 
 ## Important Information
@@ -30,6 +29,12 @@ into one app that may be helpful.
 ## Installing Trunkfriends
 
 [Installing from source](docs/installing_source.md)
+
+Installation packages will be added shortly.
+
+## Using Trunkfriends
+
+[A quick intro to using Trunkfriends](docs/using.md)
 
 Installation packages will be added shortly.
 
