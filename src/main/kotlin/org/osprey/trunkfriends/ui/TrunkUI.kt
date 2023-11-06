@@ -12,6 +12,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.config.Config
@@ -147,7 +148,9 @@ fun main() = application {
         }
     } as MutableList<Pair<String, Config>>
 
+    val icon = painterResource("icon.png")
     Window(
+        icon = icon,
         onCloseRequest = ::exitApplication,
         title = "Trunk Friends"
     ) {

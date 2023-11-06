@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.osprey"
-version = "0.0.1"
+version = "0.3.0"
 
 repositories {
     mavenCentral()
@@ -27,9 +27,20 @@ compose.desktop {
         mainClass = "org.osprey.trunkfriends.ui.TrunkUIKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Trunkfriends"
-            packageVersion = "1.0.0"
+            packageVersion = "0.3.0"
+            windows {
+                menuGroup = "Trunkfriends"
+                upgradeUuid = "cc9631f7-88bf-4520-86f8-242f0615caf7"
+                iconFile.set(project.file("icon.ico"))
+                modules("java.net.http")
+            }
+            linux {
+                iconFile.set(project.file("icon.png"))
+                debMaintainer = "steinar.eliassen@gmail.com"
+                appRelease = "1"
+            }
         }
     }
 }

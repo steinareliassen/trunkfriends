@@ -1,4 +1,4 @@
-package com.osprey.trunkfriends.tools
+package org.osprey.trunkfriends.opt
 
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
