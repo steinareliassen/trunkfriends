@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends.ui
+package org.osprey.trunkfriends.ui.history
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -15,7 +15,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
-import org.osprey.trunkfriends.ui.dto.HistoryCard
+import org.osprey.trunkfriends.ui.BannerRow
+import org.osprey.trunkfriends.ui.CommonButton
+import org.osprey.trunkfriends.ui.CommonIconButton
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -23,12 +25,10 @@ import java.util.*
 
 @Composable
 fun historyListing(
+    historyState: HistoryViewState,
     serverUser: String,
     zoomedName: String?,
-    time: Long,
-    state: UIState,
-    onNameChange: (String?) -> Unit,
-    onTimeChange: (Long) -> Unit
+    onNameChange: (String?) -> Unit
 ) {
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -40,15 +40,16 @@ fun historyListing(
 
     val history = HistoryHandler().readHistory(serverUser)
 
-    if (history.isNotEmpty() && state.time == 0L) {
-        state.time = history.map { (_, control) ->
+    if (history.isNotEmpty() && historyState.time == 0L) {
+        historyState.time = history.map { (_, control) ->
             control.substring(0, control.length - 3).toLong()
         }.max()
-        state.timeslotPage = history.map { (_, control) ->
+        historyState.timeslotPage = history.map { (_, control) ->
             control.substring(0, control.length - 3).toLong()
         }.distinct().size - 1
         return
     }
+
     Column(
         modifier = Modifier
             .fillMaxWidth(1f)
@@ -72,38 +73,34 @@ server with requests. Once followers are imported, you will be see them here.
         }.distinct()
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            if (history.isNotEmpty() && state.zoomedName == null) {
-                CommonIconButton(text = timestampToDateString(state.time), icon = Icons.Default.MoreVert) {
-                    state.historyDropdownState = true
+            if (history.isNotEmpty() && zoomedName == null) {
+                CommonIconButton(text = timestampToDateString(historyState.time), icon = Icons.Default.MoreVert) {
+                    historyState.historyDropdownState = true
                 }
-                if (state.timeslotPage > 0)
+                if (historyState.timeslotPage > 0)
                     CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
-                        state.timeslotPage--
-                        state.time = timeslots[state.timeslotPage]
-                        state.page = 0
+                        historyState.time = timeslots[historyState.previousTimeslot()]
                     }
-                CommonButton(enabled = false, text = "${state.timeslotPage + 1}/${timeslots.size}") {}
-                if (state.timeslotPage < timeslots.size - 1)
+                CommonButton(enabled = false, text = "${historyState.timeslotPage + 1}/${timeslots.size}") {}
+                if (historyState.timeslotPage < timeslots.size - 1)
                     CommonIconButton(text = "Next timeslot", icon = Icons.Default.ArrowForward, iconBefore = false) {
-                        state.timeslotPage++
-                        state.time = timeslots[state.timeslotPage]
-                        state.page = 0
+                        historyState.time = timeslots[historyState.nextTimeslot()]
                     }
             }
         }
 
         DropdownMenu(
-            expanded = state.historyDropdownState,
-            onDismissRequest = { state.historyDropdownState = false }
+            expanded = historyState.historyDropdownState,
+            onDismissRequest = { historyState.historyDropdownState = false }
         ) {
 
             timeslots.forEachIndexed { i, time ->
                 DropdownMenuItem(
                     onClick = {
-                        onTimeChange(time)
-                        state.timeslotPage = i
-                        state.page = 0
-                        state.historyDropdownState = false
+                        historyState.time = time
+                        historyState.timeslotPage = i
+                        historyState.page = 0
+                        historyState.historyDropdownState = false
                     }
                 ) {
                     Text(timestampToDateString(time))
@@ -112,7 +109,7 @@ server with requests. Once followers are imported, you will be see them here.
         }
 
         HistoryHandler().createHistoryCards(history).filter {
-            ((zoomedName == null && time == it.timeStamp) || zoomedName == it.acct)
+            ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
         }.chunked(if (zoomedName == null) 14 else 8).apply {
             Card(
                 elevation = Dp(2F),
@@ -123,7 +120,7 @@ server with requests. Once followers are imported, you will be see them here.
                     .align(Alignment.CenterHorizontally)
             ) {
                 Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                    drop(state.page).first().forEach { historyCard ->
+                    drop(historyState.page).first().forEach { historyCard ->
                         Row(modifier = Modifier.align(Alignment.Start)) {
                             if (zoomedName != null) {
                                 Column {
@@ -131,7 +128,9 @@ server with requests. Once followers are imported, you will be see them here.
                                     followCard(historyCard, onNameChange)
                                 }
                             } else {
-                                followCard(historyCard, onNameChange)
+                                followCard(historyCard) {
+                                    onNameChange(it)
+                                }
                             }
                         }
                     }
@@ -139,12 +138,12 @@ server with requests. Once followers are imported, you will be see them here.
             }
 
             Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                if (state.page > 0) CommonButton(text = "<< prev page") {
-                    state.page--
+                if (historyState.page > 0) CommonButton(text = "<< prev page") {
+                    historyState.page--
                 }
-                CommonButton(enabled = false, text = "${state.page + 1}/${size}") {}
-                if (state.page < size - 1) CommonButton(text = "next page >>") {
-                    state.page++
+                CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
+                if (historyState.page < size - 1) CommonButton(text = "next page >>") {
+                    historyState.page++
                 }
             }
         }

@@ -17,6 +17,7 @@ import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.authenticate.AuthState
 import org.osprey.trunkfriends.ui.authenticate.authenticateView
+import org.osprey.trunkfriends.ui.history.historyListing
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 import java.nio.file.Files
@@ -24,10 +25,16 @@ import java.nio.file.Paths
 
 @Composable
 @Preview
-fun App(state : UIState) {
+fun App(state: UIState) {
+
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
-        if (state.view == "Add server") authenticateView(remember { AuthState() }, state)
-        else if(state.zoomedName != null) {
+
+        if (state.view == "Add server") {
+            // Authenticate view, without header
+            authenticateView(remember { AuthState() }, state)
+        }
+        else if (state.zoomedName != null) {
+            // Zoomed history view, with clear search button
             Row(modifier = Modifier.fillMaxWidth()) {
                 CommonButton(
                     text = "Clear search"
@@ -35,91 +42,86 @@ fun App(state : UIState) {
                     state.zoomedName = null
                 }
             }
+        } else {
+            // Regular header, with button row
+            ButtonRowHeader(state)
+        }
+
+        if (state.view == "History")
             historyListing(
+                state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
                 state.zoomedName,
-                state.time,
-                state,
-                onNameChange = { state.zoomedName = it },
-                onTimeChange = { state.time = it },
+                onNameChange = { state.zoomedName = it }
             )
-        }
-        else {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                CommonButton(enabled = state.activeButtons, text = "About") {
-                    state.view = "About"
-                }
-
-                if (state.selectedConfig != null) {
-                    CommonButton(enabled = state.activeButtons, text = "History Overview") {
-                        state.view = "History"
-                    }
-                    CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
-                        state.view = "Refresh"
-                    }
-                }
-
-                Button(
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = { state.dropDownState = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Servers"
-                    )
-                    Text("select server")
-                }
-
-                DropdownMenu(
-                    expanded = state.dropDownState,
-                    onDismissRequest = { state.dropDownState = false }
-                ) {
-                    state.configMap.forEach { configPair ->
-                        DropdownMenuItem(
-                            onClick = {
-                                state.onServerSelect("History", configPair)
-                            }
-                        ) {
-                            Text(configPair.first)
-                        }
-                    }
-                    DropdownMenuItem(
-                        onClick = {
-                            state.onServerSelect("Add server", null)
-                        }
-                    ) {
-                        Text("Add new server")
-                    }
-                }
-
-            }
-
-            BannerRow(
-                "Selected server: " +
-                        (state.selectedConfig?.first ?: "select server from dropdown")
-            )
-
-            if (state.view == "History")
-                historyListing(
-                    state.selectedConfig?.first ?: "No Server",
-                    state.zoomedName,
-                    state.time,
-                    state,
-                    onNameChange = { state.zoomedName = it },
-                    onTimeChange = { state.time = it },
-                )
-            if (state.view == "About") aboutView()
-            if (state.view == "Refresh") {
-                refreshView(state)
-            }
+        if (state.view == "About") aboutView()
+        if (state.view == "Refresh") {
+            refreshView(state)
         }
     }
 }
 
+@Composable
+fun ButtonRowHeader(state : UIState) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        CommonButton(enabled = state.activeButtons, text = "About") {
+            state.view = "About"
+        }
+
+        if (state.selectedConfig != null) {
+            CommonButton(enabled = state.activeButtons, text = "History Overview") {
+                state.view = "History"
+            }
+            CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
+                state.view = "Refresh"
+            }
+        }
+
+        Button(
+            modifier = Modifier.padding(4.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+            onClick = { state.dropDownState = true }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Servers"
+            )
+            Text("select server")
+        }
+
+        DropdownMenu(
+            expanded = state.dropDownState,
+            onDismissRequest = { state.dropDownState = false }
+        ) {
+            state.configMap.forEach { configPair ->
+                DropdownMenuItem(
+                    onClick = {
+                        state.onServerSelect("History", configPair)
+                    }
+                ) {
+                    Text(configPair.first)
+                }
+            }
+            DropdownMenuItem(
+                onClick = {
+                    state.onServerSelect("Add server", null)
+                }
+            ) {
+                Text("Add new server")
+            }
+        }
+
+    }
+
+    BannerRow(
+        "Selected server: " +
+                (state.selectedConfig?.first ?: "select server from dropdown")
+    )
+
+}
 fun main() = application {
 
-    val rootPath = FileUtils.getUserDirectoryPath()+"/.trunkfriends"
+    val rootPath = FileUtils.getUserDirectoryPath() + "/.trunkfriends"
     val path = Paths.get(rootPath)
     if (!Files.exists(path)) {
         Files.createDirectory(path)
@@ -128,7 +130,7 @@ fun main() = application {
     if (!Files.isDirectory(path)) throw IllegalStateException("Config folder is not a folder")
 
     val configMap = File(rootPath).listFiles()!!.map { server ->
-        File(rootPath+"/"+server.name).listFiles()!!.map { user ->
+        File(rootPath + "/" + server.name).listFiles()!!.map { user ->
             (server.name to user.name)
         }
     }.flatten().mapNotNull {
@@ -136,13 +138,13 @@ fun main() = application {
             if (file.exists()) {
                 (
                         "${it.first}/${it.second}"
-                        to
-                        file.readLines().first().let {
-                            mapper.readValue(
-                                it, Config::class.java
-                            )
-                        }
-                )
+                                to
+                                file.readLines().first().let {
+                                    mapper.readValue(
+                                        it, Config::class.java
+                                    )
+                                }
+                        )
             } else null
         }
     } as MutableList<Pair<String, Config>>
