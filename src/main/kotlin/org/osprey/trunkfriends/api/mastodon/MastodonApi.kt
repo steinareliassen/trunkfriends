@@ -4,7 +4,6 @@ import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.*
-import org.osprey.trunkfriends.ui.UIState
 import org.osprey.trunkfriends.util.mapper
 import java.net.URI
 import java.net.http.HttpClient
@@ -39,17 +38,18 @@ class MastodonApi(
                 HttpResponse.BodyHandlers.ofString()
             ).body().toString()
 
-
-    override suspend fun getFollow(userId: String, direction: String, funk : (String) -> Unit, state : UIState): List<UserClass> {
+    override suspend fun getFollow(userId: String, direction: String, funk: (String) -> Unit): List<UserClass> {
         var followCount = 0
-        state.feedback = "$direction fetched: $followCount"
+        funk("$direction fetched: $followCount")
+        delay(100L)
         val follow = mutableListOf<UserClass>()
-        var list = findUserPage(0, userId, direction, funk)
+        var list = findUserPage(0, userId, direction)
         follow.addAll(list.first)
         while (list.second != 0L) {
             followCount += 40
-            state.feedback = "$direction fetched: $followCount"
-            list = findUserPage(list.second, userId, direction, funk)
+            funk("$direction fetched: $followCount")
+            delay(100L)
+            list = findUserPage(list.second, userId, direction)
             follow.addAll(list.first)
         }
         return follow
@@ -79,7 +79,7 @@ class MastodonApi(
         return currentUsers
     }
 
-    private suspend fun findUserPage(start: Long, id: String, direction: String, funk : (String) -> Unit): Pair<Array<UserClass>, Long> {
+    private fun findUserPage(start: Long, id: String, direction: String): Pair<Array<UserClass>, Long> {
         val startPoint = if (start != 0L) "?max_id=$start" else ""
         val uri = "https://${config.server}/api/v1/accounts/${id}/$direction$startPoint"
         val request = HttpRequest.newBuilder()
@@ -92,9 +92,6 @@ class MastodonApi(
 
         val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
-
-        funk("$direction page $start")
-        delay(100L)
 
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")

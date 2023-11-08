@@ -8,46 +8,40 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
+import org.osprey.trunkfriends.ui.history.HistoryViewState
 
 class UIState(var configMap: MutableList<Pair<String, Config>>) {
-    var page by mutableStateOf(0)
-    var timeslotPage by mutableStateOf(0)
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
     var dropDownState by mutableStateOf(false)
     var feedback by mutableStateOf("Refreshing")
-    var historyDropdownState by mutableStateOf(false)
     var zoomedName by mutableStateOf<String?>(null)
-    var time by mutableStateOf(0L)
     var view by mutableStateOf("About")
-    var refreshText by mutableStateOf("\n\nRefreshing followers / following list, please wait\n\nStarting fetch\n")
     var activeButtons by mutableStateOf(true)
 
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
     private var refreshActive = false
 
+    var historyViewState = HistoryViewState()
+
     fun start() {
         if (refreshActive) return
-        val uiState = this
         refreshActive = true
         coroutineScope.launch {
             activeButtons = false
-            refreshText = "Starting fetch\n"
-            refresh(uiState, selectedConfig ?: throw IllegalStateException("Should not be null")) {
-                refreshText += it+"\n"
+            refresh(selectedConfig ?: throw IllegalStateException("Should not be null")) { param ->
+                feedback = param
             }
             refreshActive = false
             activeButtons = true
             view = "History"
-            time = 0L
+            historyViewState.reset()
         }
     }
 
     fun onServerSelect(selectView : String, setConfig : Pair<String, Config>?) {
         dropDownState = false
         selectedConfig = setConfig
-        time = 0L
-        page = 0
-        timeslotPage = 0
+        historyViewState.reset()
         zoomedName = null
         view = selectView
     }

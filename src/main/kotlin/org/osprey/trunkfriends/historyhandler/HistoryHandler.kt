@@ -2,7 +2,7 @@ package org.osprey.trunkfriends.historyhandler
 
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.ui.dto.HistoryCard
+import org.osprey.trunkfriends.ui.history.HistoryCard
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
@@ -64,6 +64,7 @@ class HistoryHandler {
         latestHistory: Map<String, CurrentUser>,
         currentUsers: Map<String, CurrentUser>
     ): List<Pair<CurrentUser, String>> {
+        val timestamp = System.currentTimeMillis()
         val newHistoryLines = mutableListOf<Pair<CurrentUser, String>>()
 
         fun historyLine(userObject: CurrentUser) {

@@ -3,11 +3,8 @@ package org.osprey.trunkfriends.historyhandler
 import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.config.Config
-import org.osprey.trunkfriends.ui.UIState
 
-val timestamp = System.currentTimeMillis()
-
-suspend fun refresh(state: UIState, selectedConfig : Pair<String, Config>, feedbackFunction: (String) -> Unit) {
+suspend fun refresh(selectedConfig : Pair<String, Config>, feedbackFunction: (String) -> Unit) {
     // Set up fetchers
     try {
         val currentUserFetcher = MastodonApi(
@@ -23,8 +20,8 @@ suspend fun refresh(state: UIState, selectedConfig : Pair<String, Config>, feedb
 
         val userId = currentUserFetcher.getUserId()
 
-        val following = currentUserFetcher.getFollow(userId, "following", feedbackFunction, state)
-        val followers = currentUserFetcher.getFollow(userId, "followers", feedbackFunction, state)
+        val following = currentUserFetcher.getFollow(userId, "following", feedbackFunction)
+        val followers = currentUserFetcher.getFollow(userId, "followers", feedbackFunction)
 
         // Get current users
         val currentUsers =
