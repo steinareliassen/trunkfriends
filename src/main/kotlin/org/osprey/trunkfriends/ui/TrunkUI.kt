@@ -78,6 +78,7 @@ fun ButtonRowHeader(state : UIState) {
         }
 
         Button(
+            enabled = state.activeButtons,
             modifier = Modifier.padding(4.dp),
             colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
             onClick = { state.dropDownState = true }

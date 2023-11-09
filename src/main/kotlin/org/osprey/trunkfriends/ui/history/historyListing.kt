@@ -38,6 +38,8 @@ fun historyListing(
                 this.substring(0..this.length - 4).replace("T", " ")
             }
 
+    if (historyState.resetHistoryPage(zoomedName)) return
+
     val history = HistoryHandler().readHistory(serverUser)
 
     if (history.isNotEmpty() && historyState.time == 0L) {
@@ -130,6 +132,7 @@ server with requests. Once followers are imported, you will be see them here.
                             } else {
                                 followCard(historyCard) {
                                     onNameChange(it)
+                                    historyState.storeHistoryPage()
                                 }
                             }
                         }

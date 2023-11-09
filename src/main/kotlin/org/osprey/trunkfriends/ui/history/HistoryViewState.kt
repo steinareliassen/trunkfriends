@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 
 class HistoryViewState {
     var page by mutableStateOf(0)
+    var returnPage by mutableStateOf(0)
     var timeslotPage by mutableStateOf(0)
     var historyDropdownState by mutableStateOf(false)
     var time by mutableStateOf(0L)
@@ -28,5 +29,18 @@ class HistoryViewState {
         page = 0
         return timeslotPage
     }
+
+    fun storeHistoryPage() {
+        returnPage = page
+        page = 0
+    }
+
+    fun resetHistoryPage(zoomedName : String?): Boolean =
+        if (zoomedName == null && returnPage != 0) {
+            page = returnPage
+            returnPage = 0
+            true
+        } else false
+
 
 }
