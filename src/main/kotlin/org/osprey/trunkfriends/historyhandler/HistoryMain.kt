@@ -4,7 +4,7 @@ import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.config.Config
 
-suspend fun refresh(selectedConfig : Pair<String, Config>, feedbackFunction: (String) -> Unit) {
+suspend fun refresh(selectedConfig : Pair<String, Config>, isCancelled : () -> Boolean,feedbackFunction: (String) -> Unit) {
     // Set up fetchers
     try {
         val currentUserFetcher = MastodonApi(
@@ -20,8 +20,8 @@ suspend fun refresh(selectedConfig : Pair<String, Config>, feedbackFunction: (St
 
         val userId = currentUserFetcher.getUserId()
 
-        val following = currentUserFetcher.getFollow(userId, "following", feedbackFunction)
-        val followers = currentUserFetcher.getFollow(userId, "followers", feedbackFunction)
+        val following = currentUserFetcher.getFollow(userId, "following", isCancelled ,feedbackFunction)
+        val followers = currentUserFetcher.getFollow(userId, "followers", isCancelled, feedbackFunction)
 
         // Get current users
         val currentUsers =
@@ -35,9 +35,12 @@ suspend fun refresh(selectedConfig : Pair<String, Config>, feedbackFunction: (St
         feedbackFunction("Imported lines : "+newHistory.size+"\n\n")
         delay(1000L)
         historyHandler.writeHistory(selectedConfig.first,history + newHistory) // write out old and new history combined*/
+    } catch (e : InterruptedException) {
+        return
     } catch (e : Exception) {
         feedbackFunction("Error during fetch, list not updated\n\n")
         feedbackFunction("Error: ${e.message}\n\n")
         delay(1000L)
     }
+
 }

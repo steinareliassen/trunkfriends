@@ -39,7 +39,7 @@ with requests. Most instances have a max request pr 5 minute interval.
             Button(
                 modifier = Modifier.padding(4.dp).align(Alignment.CenterHorizontally),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { }
+                onClick = { state.refreshActive = false }
             ) {
                 Text(state.feedback + "\n\nClick to cancel import")
             }
@@ -55,7 +55,7 @@ with requests. Most instances have a max request pr 5 minute interval.
                 enabled = state.activeButtons,
                 modifier = Modifier.padding(4.dp).align(Alignment.CenterHorizontally),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.start() }
+                onClick = { state.startListRefresh() }
             ) {
                 Text("Start importing following / followers list")
             }

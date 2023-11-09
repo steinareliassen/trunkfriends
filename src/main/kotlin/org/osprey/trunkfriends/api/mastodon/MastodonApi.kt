@@ -38,21 +38,33 @@ class MastodonApi(
                 HttpResponse.BodyHandlers.ofString()
             ).body().toString()
 
-    override suspend fun getFollow(userId: String, direction: String, funk: (String) -> Unit): List<UserClass> {
+    override suspend fun getFollow(
+        userId: String,
+        direction: String,
+        isCancelled : () -> Boolean,
+        funk: (String) -> Unit
+    ) : List<UserClass> {
         var followCount = 0
         funk("$direction fetched: $followCount")
-        delay(100L)
         val follow = mutableListOf<UserClass>()
         var list = findUserPage(0, userId, direction)
         follow.addAll(list.first)
         while (list.second != 0L) {
             followCount += 40
             funk("$direction fetched: $followCount")
-            delay(100L)
+            sleepAndCheck(isCancelled)
             list = findUserPage(list.second, userId, direction)
             follow.addAll(list.first)
+            if (isCancelled()) throw InterruptedException()
         }
         return follow
+    }
+
+    suspend fun sleepAndCheck(isCancelled : () -> Boolean) {
+        (1..15).forEach {
+            delay(100)
+            if (isCancelled()) throw InterruptedException()
+        }
     }
 
     override fun getCurrentUsers(following : List<UserClass>, followers : List<UserClass>) : Map<String, CurrentUser> {
@@ -96,8 +108,6 @@ class MastodonApi(
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")
         val stopIndex = header.indexOf(">")
-
-        Thread.sleep(1500) // Do not overload server with requests
 
         try {
             if (header == "empty") return Pair(users, 0L)

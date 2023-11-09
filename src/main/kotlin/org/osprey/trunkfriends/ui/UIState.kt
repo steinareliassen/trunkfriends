@@ -19,16 +19,20 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var activeButtons by mutableStateOf(true)
 
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
-    private var refreshActive = false
+
+    var refreshActive = false
 
     var historyViewState = HistoryViewState()
 
-    fun start() {
+    fun startListRefresh() {
         if (refreshActive) return
         refreshActive = true
         coroutineScope.launch {
             activeButtons = false
-            refresh(selectedConfig ?: throw IllegalStateException("Should not be null")) { param ->
+            refresh(
+                selectedConfig ?: throw IllegalStateException("Should not be null"),
+                { !refreshActive }
+            ) { param ->
                 feedback = param
             }
             refreshActive = false
