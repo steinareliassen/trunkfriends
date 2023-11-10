@@ -162,7 +162,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
                 backgroundColor = Color.White,
                 contentColor = Color.Black
             ),
-        modifier = Modifier.padding(0.dp).height(25.dp).width(100.dp),
+        modifier = Modifier.padding(0.dp).height(25.dp),
         onClick = { onClick() },
     ) {
         Text(text, fontSize = 7.sp)
@@ -221,12 +221,20 @@ fun followCard(
                     }
                 }
                 Column {
-                    Row(modifier = Modifier.width(500.dp)) {
+                    Row(modifier = Modifier.width(450.dp)) {
                         Text(text = acct)
                     }
                 }
-                zoomButton(text = "\uD83D\uDD0D") {
-                    onNameChange(acct)
+                Column {
+                    Checkbox(
+                        checked = false,
+                        onCheckedChange = { }
+                    )
+                }
+                Column {
+                    zoomButton(text = "\uD83D\uDD0D") {
+                        onNameChange(acct)
+                    }
                 }
             }
         }
