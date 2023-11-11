@@ -5,7 +5,8 @@
 This is public domain, comes with no warranty, use as is. The code is
 currently a complete mess, and suffers greatly from the fact that I have
 not made any UI in decades and have no experience with Jetpack Compose
-prior to making this. 
+prior to making this. The artwork is excluded, the artist retains the 
+copyright, and it is used with permission.
 
 Trunkfriends stores its data in a folder ".trunkfriends" on the users home
 directory. As this software is very much in an alpha state and can potentially
