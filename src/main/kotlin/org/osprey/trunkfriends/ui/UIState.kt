@@ -17,7 +17,6 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var zoomedName by mutableStateOf<String?>(null)
     var view by mutableStateOf("About")
     var activeButtons by mutableStateOf(true)
-
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
 
     var refreshActive = false
@@ -50,4 +49,15 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
         view = selectView
     }
 
+    fun clearSelect() {
+        historyViewState.pasteBag.clear()
+    }
+
+    fun getSelected(limit : Int = 0) =
+        if (historyViewState.pasteBag.isEmpty())
+            ""
+        else if (limit == 0)
+            historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
+        else
+            historyViewState.pasteBag.take(limit).reduce { acc, s -> "$acc\n$s" }
 }

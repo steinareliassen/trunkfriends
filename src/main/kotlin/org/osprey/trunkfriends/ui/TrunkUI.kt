@@ -19,6 +19,7 @@ import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.authenticate.AuthState
 import org.osprey.trunkfriends.ui.authenticate.authenticateView
 import org.osprey.trunkfriends.ui.history.historyListing
+import org.osprey.trunkfriends.ui.history.pasteView
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 import java.nio.file.Files
@@ -28,6 +29,11 @@ import java.nio.file.Paths
 @Preview
 fun App(state: UIState) {
 
+    // Todo: startpoint for scalable UI
+    /*val configuration = LocalConfiguration.current
+
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
         if (state.view == "Add server") {
@@ -59,6 +65,9 @@ fun App(state: UIState) {
         if (state.view == "Refresh") {
             refreshView(state)
         }
+        if (state.view == "Pastebag") {
+            pasteView(state)
+        }
     }
 }
 
@@ -76,6 +85,10 @@ fun ButtonRowHeader(state : UIState) {
             CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
                 state.view = "Refresh"
             }
+            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
+                state.view = "Pastebag"
+            }
+
         }
 
         Button(

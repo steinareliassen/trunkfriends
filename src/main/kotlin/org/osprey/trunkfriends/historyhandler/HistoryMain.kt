@@ -40,7 +40,7 @@ suspend fun refresh(selectedConfig : Pair<String, Config>, isCancelled : () -> B
     } catch (e : Exception) {
         feedbackFunction("Error during fetch, list not updated\n\n")
         feedbackFunction("Error: ${e.message}\n\n")
-        delay(1000L)
+        delay(10000L)
     }
 
 }

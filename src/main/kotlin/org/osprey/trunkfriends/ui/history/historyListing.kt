@@ -127,10 +127,10 @@ server with requests. Once followers are imported, you will be see them here.
                             if (zoomedName != null) {
                                 Column {
                                     Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, onNameChange)
+                                    followCard(historyCard, historyState, onNameChange)
                                 }
                             } else {
-                                followCard(historyCard) {
+                                followCard(historyCard, historyState) {
                                     onNameChange(it)
                                     historyState.storeHistoryPage()
                                 }
@@ -162,7 +162,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
                 backgroundColor = Color.White,
                 contentColor = Color.Black
             ),
-        modifier = Modifier.padding(0.dp).height(25.dp).width(100.dp),
+        modifier = Modifier.padding(0.dp).height(25.dp),
         onClick = { onClick() },
     ) {
         Text(text, fontSize = 7.sp)
@@ -172,6 +172,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 @Composable
 fun followCard(
     historyCard: HistoryCard,
+    historyState: HistoryViewState,
     onNameChange: (String?) -> Unit
 ) {
     Card(
@@ -221,12 +222,26 @@ fun followCard(
                     }
                 }
                 Column {
-                    Row(modifier = Modifier.width(500.dp)) {
+                    Row(modifier = Modifier.width(450.dp)) {
                         Text(text = acct)
                     }
                 }
-                zoomButton(text = "\uD83D\uDD0D") {
-                    onNameChange(acct)
+                Column {
+                    Checkbox(
+                        checked = historyState.pasteBag.contains(acct),
+                        onCheckedChange = {
+                            if (historyState.pasteBag.contains(acct)) {
+                                historyState.pasteBag.remove(acct)
+                            } else {
+                                historyState.pasteBag.add(acct)
+                            }
+                        }
+                    )
+                }
+                Column {
+                    zoomButton(text = "\uD83D\uDD0D") {
+                        onNameChange(acct)
+                    }
                 }
             }
         }
