@@ -127,10 +127,10 @@ server with requests. Once followers are imported, you will be see them here.
                             if (zoomedName != null) {
                                 Column {
                                     Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, onNameChange)
+                                    followCard(historyCard, historyState, onNameChange)
                                 }
                             } else {
-                                followCard(historyCard) {
+                                followCard(historyCard, historyState) {
                                     onNameChange(it)
                                     historyState.storeHistoryPage()
                                 }
@@ -172,6 +172,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 @Composable
 fun followCard(
     historyCard: HistoryCard,
+    historyState: HistoryViewState,
     onNameChange: (String?) -> Unit
 ) {
     Card(
@@ -227,8 +228,14 @@ fun followCard(
                 }
                 Column {
                     Checkbox(
-                        checked = false,
-                        onCheckedChange = { }
+                        checked = historyState.pasteBag.contains(acct),
+                        onCheckedChange = {
+                            if (historyState.pasteBag.contains(acct)) {
+                                historyState.pasteBag.remove(acct)
+                            } else {
+                                historyState.pasteBag.add(acct)
+                            }
+                        }
                     )
                 }
                 Column {

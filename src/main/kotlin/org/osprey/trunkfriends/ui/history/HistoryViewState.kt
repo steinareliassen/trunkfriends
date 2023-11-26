@@ -1,8 +1,6 @@
 package org.osprey.trunkfriends.ui.history
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 
 class HistoryViewState {
     var page by mutableStateOf(0)
@@ -10,6 +8,7 @@ class HistoryViewState {
     var timeslotPage by mutableStateOf(0)
     var historyDropdownState by mutableStateOf(false)
     var time by mutableStateOf(0L)
+    val pasteBag = mutableStateListOf<String>()
 
     fun reset() {
         page = 0
