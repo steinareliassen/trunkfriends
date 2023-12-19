@@ -33,6 +33,14 @@ into one app that may be helpful.
 
 Installation packages will be added shortly.
 
+## Backing up Trunkfriends data
+
+Without previous fetches, Trunkfriends is not very helpful.
+
+Trunkfriends stores all it's data in a folder on your home directory, ".trunkfriends"
+
+Backup this folder every now and then, and keep it safe on another harddrive or in the cloud.
+
 ## Using Trunkfriends
 
 [A quick intro to using Trunkfriends](docs/using.md)
