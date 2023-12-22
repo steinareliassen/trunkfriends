@@ -42,6 +42,8 @@ fun historyListing(
 
     val history = HistoryHandler().readHistory(serverUser)
 
+    // Did we just get to history view from another view? If so, calculate the time of the
+    // last page, and return, so UI can refresh to that page.
     if (history.isNotEmpty() && historyState.time == 0L) {
         historyState.time = history.map { (_, control) ->
             control.substring(0, control.length - 3).toLong()

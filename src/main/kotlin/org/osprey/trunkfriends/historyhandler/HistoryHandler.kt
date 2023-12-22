@@ -27,6 +27,23 @@ class HistoryHandler {
         return history
     }
 
+    fun createListCards(history: List<CurrentUser>) =
+        history.let {
+            it.map { user ->
+                with(user) {
+                   HistoryCard(
+                        follower = follower,
+                        prevFollower = follower,
+                        following = following,
+                        prevFollowing = following,
+                        acct = acct,
+                        username = username,
+                        timeStamp = 0L
+                    )
+                }
+            }
+        }
+
     fun createHistoryCards(history: List<Pair<CurrentUser, String>>) =
         history.let {
             val previousUserMap = mutableMapOf<String, CurrentUser>()

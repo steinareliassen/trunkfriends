@@ -8,11 +8,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
+import org.osprey.trunkfriends.managementhandler.managementAction
 import org.osprey.trunkfriends.ui.history.HistoryViewState
 
 class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
-    var dropDownState by mutableStateOf(false)
+    var selectServerDropDownState by mutableStateOf(false)
+    var menuDrownDownState by mutableStateOf(false)
+
     var feedback by mutableStateOf("Refreshing")
     var zoomedName by mutableStateOf<String?>(null)
     var view by mutableStateOf("About")
@@ -41,8 +44,27 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
         }
     }
 
+    fun startExecuteManagementAction(action: String, accounts: List<String>) {
+        if (refreshActive) return
+        refreshActive = true
+        coroutineScope.launch {
+            activeButtons = false
+            managementAction(
+                accounts,
+                action,
+                selectedConfig ?: throw IllegalStateException("Should not be null"),
+                { !refreshActive }
+            ) { param ->
+                feedback = param
+            }
+            refreshActive = false
+            activeButtons = true
+            view = "Management"
+            historyViewState.reset()
+        }
+    }
     fun onServerSelect(selectView : String, setConfig : Pair<String, Config>?) {
-        dropDownState = false
+        selectServerDropDownState = false
         selectedConfig = setConfig
         historyViewState.reset()
         zoomedName = null

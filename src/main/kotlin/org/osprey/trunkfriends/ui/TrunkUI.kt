@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.Window
@@ -54,15 +55,34 @@ fun App(state: UIState) {
             ButtonRowHeader(state)
         }
 
-        if (state.view == "History")
+        if (state.view == "History") {
+            state.historyViewState.page = 0
+            state.historyViewState.time = 0
             historyListing(
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
                 state.zoomedName,
                 onNameChange = { state.zoomedName = it }
             )
+        }
+        if (state.view == "List") {
+            state.historyViewState.page = 0
+            state.historyViewState.time = 0
+            overviewListing(
+                state.historyViewState,
+                state.selectedConfig?.first ?: "No Server",
+                state.zoomedName,
+                onNameChange = { state.zoomedName = it }
+            )
+        }
+        if (state.view == "Manage") {
+            addRemoveView(state)
+        }
         if (state.view == "About") aboutView()
         if (state.view == "Refresh") {
+            refreshView(state)
+        }
+        if (state.view == "ExecuteManagement") {
             refreshView(state)
         }
         if (state.view == "Pastebag") {
@@ -74,28 +94,47 @@ fun App(state: UIState) {
 @Composable
 fun ButtonRowHeader(state : UIState) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        CommonButton(enabled = state.activeButtons, text = "About") {
-            state.view = "About"
+
+        Button(
+            enabled = state.activeButtons,
+            modifier = Modifier.padding(4.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+            onClick = { state.menuDrownDownState = true }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menu"
+            )
+            Text("Menu")
         }
 
-        if (state.selectedConfig != null) {
-            CommonButton(enabled = state.activeButtons, text = "History Overview") {
-                state.view = "History"
-            }
-            CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
-                state.view = "Refresh"
-            }
-            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
-                state.view = "Pastebag"
-            }
+        val dropDownItems = listOf(
+            Triple("About", "About", false),
+            Triple("List Overview", "List", true),
+            Triple("History Overview", "History", true),
+            Triple("Refresh followers", "Refresh", true),
+            Triple("Manage followers", "Manage", true),
 
+            )
+        DropdownMenu(
+            expanded = state.menuDrownDownState,
+            onDismissRequest = { state.menuDrownDownState = false }
+        ) {
+            dropDownItems.forEach {
+                if (((it.third && state.selectedConfig != null) || !it.third)) {
+                    CommonDropDownItem(text = it.first) {
+                        state.menuDrownDownState = false
+                        state.view = it.second
+                    }
+                }
+            }
         }
 
         Button(
             enabled = state.activeButtons,
             modifier = Modifier.padding(4.dp),
             colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-            onClick = { state.dropDownState = true }
+            onClick = { state.selectServerDropDownState = true }
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -105,8 +144,8 @@ fun ButtonRowHeader(state : UIState) {
         }
 
         DropdownMenu(
-            expanded = state.dropDownState,
-            onDismissRequest = { state.dropDownState = false }
+            expanded = state.selectServerDropDownState,
+            onDismissRequest = { state.selectServerDropDownState = false }
         ) {
             state.configMap.forEach { configPair ->
                 DropdownMenuItem(
@@ -123,6 +162,12 @@ fun ButtonRowHeader(state : UIState) {
                 }
             ) {
                 Text("Add new server")
+            }
+        }
+
+        if (state.selectedConfig != null) {
+            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
+                state.view = "Pastebag"
             }
         }
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 
 class HistoryViewState {
     var page by mutableStateOf(0)
+    var searchText by mutableStateOf("")
     var returnPage by mutableStateOf(0)
     var timeslotPage by mutableStateOf(0)
     var historyDropdownState by mutableStateOf(false)

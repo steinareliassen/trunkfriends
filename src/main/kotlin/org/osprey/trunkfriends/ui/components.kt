@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +29,14 @@ fun CommonButton(enabled: Boolean = true, text: String, onClick: () -> Unit) =
         enabled = enabled,
         modifier = Modifier.padding(4.dp),
         colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+        onClick = onClick
+    ) {
+        Text(text)
+    }
+
+@Composable
+fun CommonDropDownItem(text: String, onClick: () -> Unit) =
+    DropdownMenuItem(
         onClick = onClick
     ) {
         Text(text)

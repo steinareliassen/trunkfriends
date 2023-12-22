@@ -12,8 +12,8 @@ import java.net.http.HttpResponse
 import kotlin.jvm.optionals.getOrNull
 
 class MastodonApi(
-    val config : Config
-) : GenericHostInterface {
+    config : Config
+) : GenericHostInterface(config) {
 
     override fun getUserId() =
         mapper.readValue(
@@ -27,6 +27,49 @@ class MastodonApi(
             ).body(),
             UserClass::class.java
         ).id
+
+    fun lookupId(account : String) =
+        mapper.readValue(
+            HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder()
+                    .uri(URI.create("https://${config.server}/api/v1/accounts/lookup?acct=$account"))
+                    .header("Authorization", config.bearer)
+                    .method("GET", HttpRequest.BodyPublishers.noBody())
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            ).body(),
+            UserClass::class.java
+        ).id
+
+    override suspend fun executeManagementAction(
+        accounts: List<String>,
+        isCancelled : () -> Boolean,
+        funk: (String) -> Unit,
+        action: String
+    ) {
+        accounts.forEach { follower ->
+            val id = lookupId(follower)
+            funk("Action: $action executed on $follower")
+            when (action) {
+                "Follow" -> addFollower(id ,follower)
+                "Unfollow" -> removeFollower(follower)
+                "AddToList" -> addToList("SOME_LIST", follower)
+            }
+            if (isCancelled()) throw InterruptedException()
+            sleepAndCheck(isCancelled)
+        }
+    }
+    override fun addFollower(id : String, follower: String) {
+        println("Adding follower : $id $follower")
+    }
+
+    override fun removeFollower(follower: String) {
+        lookupId(follower)
+    }
+
+    override fun addToList(list: String, follower: String) {
+        TODO("Not yet implemented")
+    }
 
     fun pingUser(domain: String, user: String) =
             HttpClient.newHttpClient().send(
