@@ -10,7 +10,8 @@ class HistoryViewState {
     var historyDropdownState by mutableStateOf(false)
     var time by mutableStateOf(0L)
     val pasteBag = mutableStateListOf<String>()
-    private var returnPage by mutableStateOf(0)
+    var returnView = View.HISTORY
+    var returnPage by mutableStateOf(0)
 
     fun reset() {
         page = 0

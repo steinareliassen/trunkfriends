@@ -18,6 +18,7 @@ import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import org.osprey.trunkfriends.ui.BannerRow
 import org.osprey.trunkfriends.ui.CommonButton
 import org.osprey.trunkfriends.ui.CommonIconButton
+import org.osprey.trunkfriends.ui.View
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -28,7 +29,7 @@ fun historyListing(
     historyState: HistoryViewState,
     serverUser: String,
     zoomedName: String?,
-    onNameChange: (String?) -> Unit
+    onNameChange: (String?, View) -> Unit
 ) {
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -38,7 +39,10 @@ fun historyListing(
                 this.substring(0..this.length - 4).replace("T", " ")
             }
 
-    if (historyState.resetHistoryPage(zoomedName)) return
+    if (historyState.resetHistoryPage(zoomedName)) {
+        onNameChange(null, historyState.returnView)
+        return
+    }
 
     val history = HistoryHandler().readHistory(serverUser)
 
@@ -129,11 +133,11 @@ server with requests. Once followers are imported, you will be see them here.
                             if (zoomedName != null) {
                                 Column {
                                     Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, historyState, onNameChange)
+                                    followCard(historyCard, historyState, View.HISTORY, onNameChange)
                                 }
                             } else {
-                                followCard(historyCard, historyState) {
-                                    onNameChange(it)
+                                followCard(historyCard, historyState, View.HISTORY) { name, view ->
+                                    onNameChange(name, view)
                                     historyState.storeHistoryPage()
                                 }
                             }
@@ -175,7 +179,8 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 fun followCard(
     historyCard: HistoryCard,
     historyState: HistoryViewState,
-    onNameChange: (String?) -> Unit
+    view: View,
+    onNameChange: (String?, View) -> Unit
 ) {
     Card(
         elevation = 1.dp,
@@ -242,7 +247,7 @@ fun followCard(
                 }
                 Column {
                     zoomButton(text = "\uD83D\uDD0D") {
-                        onNameChange(acct)
+                        onNameChange(acct, View.HISTORY)
                     }
                 }
             }

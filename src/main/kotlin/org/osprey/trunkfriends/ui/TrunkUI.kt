@@ -62,7 +62,15 @@ fun App(state: UIState) {
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
                 state.zoomedName,
-                onNameChange = { state.zoomedName = it }
+                onNameChange = { name, view ->
+                    state.zoomedName = name
+                    if (state.zoomedName != null) {
+                        state.historyViewState.returnView = view
+                        state.view = View.HISTORY
+                    } else {
+                        state.view = state.historyViewState.returnView
+                    }
+                }
             )
         }
         if (state.view == View.LIST) {
@@ -71,9 +79,16 @@ fun App(state: UIState) {
             overviewListing(
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
-                onNameChange = {
-                    state.zoomedName = it
-                    state.view = View.HISTORY
+                state.zoomedName,
+                onNameChange = { name, view ->
+                    // TODO: refactor into method in state (with state.history as well)
+                    state.zoomedName = name
+                    if (state.zoomedName != null) {
+                        state.historyViewState.returnView = view
+                        state.view = View.HISTORY
+                    } else {
+                        state.view = state.historyViewState.returnView
+                    }
                 }
             )
         }

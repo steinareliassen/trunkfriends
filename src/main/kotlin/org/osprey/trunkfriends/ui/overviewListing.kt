@@ -14,24 +14,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import org.osprey.trunkfriends.ui.history.followCard
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.*
 
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
     serverUser: String,
-    onNameChange: (String?) -> Unit
+    zoomedName: String?,
+    onNameChange: (String?, View) -> Unit
 ) {
-    fun timestampToDateString(timestamp: Long) =
-        DateTimeFormatter.ISO_LOCAL_DATE_TIME
-            .withLocale(Locale.GERMAN)
-            .withZone(ZoneId.of("CET"))
-            .format(Instant.ofEpochSecond(timestamp / 1000)).run {
-                this.substring(0..this.length - 4).replace("T", " ")
-            }
+
+    if (historyState.resetHistoryPage(zoomedName)) {
+        onNameChange(null, historyState.returnView)
+        return
+    }
 
     val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
 
@@ -90,8 +85,8 @@ server with requests. Once followers are imported, you will be see them here.
                 Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
                     drop(historyState.page).first().forEach { historyCard ->
                         Row(modifier = Modifier.align(Alignment.Start)) {
-                            followCard(historyCard, historyState) {
-                                onNameChange(it)
+                            followCard(historyCard, historyState, View.LIST) { name, view ->
+                                onNameChange(name, view)
                                 historyState.storeHistoryPage()
                             }
                         }
