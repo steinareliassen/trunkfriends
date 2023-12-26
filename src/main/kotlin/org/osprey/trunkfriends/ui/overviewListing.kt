@@ -7,6 +7,9 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,18 +59,22 @@ class CompareUser(
         return first.compareTo(second)
     }
 
-    private fun serverify(username : String) = if (username.contains("@")) username else "$username@$server"
+    private fun serverify(username: String) = if (username.contains("@")) username else "$username@$server"
 }
+
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
     serverUser: String,
     onNameChange: (String?, View) -> Unit
 ) {
+    val sortDropDown = remember { mutableStateOf(false) }
+    val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
+    val searchText = remember { mutableStateOf<String?>(null) }
 
     // Create a list of accounts from history-map, keeping the latest account follow / following status
     val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
-        .sortedWith(CompareUser(serverUser.split("/")[0], SortStyle.FOLLOW_STATUS))
+        .sortedWith(CompareUser(serverUser.split("/")[0], sortState.value))
 
     Column(
         modifier = Modifier
@@ -95,14 +102,17 @@ server with requests. Once followers are imported, you will be see them here.
                 onValueChange = { historyState.searchText = it },
                 label = { Text("Text to search for") }
             )
-            CommonButton(text = "Search") {
+            CommonButton(text = if (searchText.value == null) "Search" else "Clear") {
+                historyState.page = 0
+                if (searchText.value != null) searchText.value = null
+                else searchText.value = historyState.searchText
             }
 
             Button(
                 enabled = true,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { true }
+                onClick = { sortDropDown.value = true }
             ) {
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
@@ -110,39 +120,60 @@ server with requests. Once followers are imported, you will be see them here.
                 )
                 Text("Sort")
             }
-        }
 
-        HistoryHandler().createListCards(list).chunked(14).apply {
-            Card(
-                elevation = Dp(2F),
-                modifier = Modifier
-                    .width(740.dp)
-                    .wrapContentHeight()
-                    .padding(2.dp)
-                    .align(Alignment.CenterHorizontally)
+            DropdownMenu(
+                expanded = sortDropDown.value,
+                onDismissRequest = { sortDropDown.value = false }
             ) {
-                Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                    drop(historyState.page).first().forEach { historyCard ->
-                        Row(modifier = Modifier.align(Alignment.Start)) {
-                            followCard(historyCard, historyState, View.LIST) { name, view ->
-                                onNameChange(name, view)
-                                historyState.storeHistoryPage()
-                            }
-                        }
+                SortStyle.values().forEach {
+                    CommonDropDownItem(text = it.name) {
+                        sortState.value = SortStyle.valueOf(it.name)
+                        sortDropDown.value = false
                     }
                 }
             }
-
-            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                    historyState.page--
-                }
-                CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                    historyState.page++
-                }
-            }
         }
 
+        HistoryHandler().createListCards(list).filter {
+            searchText.value == null || it.acct.contains(searchText.value ?: "")
+        }.takeIf { it.isNotEmpty() }.let {
+            if (it != null) {
+                it.chunked(14).apply {
+                    Card(
+                        elevation = Dp(2F),
+                        modifier = Modifier
+                            .width(740.dp)
+                            .wrapContentHeight()
+                            .padding(2.dp)
+                            .align(Alignment.CenterHorizontally)
+                    ) {
+                        Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                            drop(historyState.page).first().forEach { historyCard ->
+                                Row(modifier = Modifier.align(Alignment.Start)) {
+                                    followCard(historyCard, historyState, View.LIST) { name, view ->
+                                        onNameChange(name, view)
+                                        historyState.storeHistoryPage()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        if (historyState.page > 0) CommonButton(text = "<< prev page") {
+                            historyState.page--
+                        }
+                        CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
+                        if (historyState.page < size - 1) CommonButton(text = "next page >>") {
+                            historyState.page++
+                        }
+                    }
+                }
+            } else {
+                BannerRow("Search returned no results")
+            }
+        }
     }
+
+
 }
