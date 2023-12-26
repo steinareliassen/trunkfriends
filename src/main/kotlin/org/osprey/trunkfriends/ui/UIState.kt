@@ -18,7 +18,10 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
 
     var feedback by mutableStateOf("Refreshing")
     var zoomedName by mutableStateOf<String?>(null)
-    var view by mutableStateOf("About")
+
+    var view by mutableStateOf(View.ABOUT)
+    var context by mutableStateOf<String?>(null)
+    var actionList = listOf<String>()
     var activeButtons by mutableStateOf(true)
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
 
@@ -39,7 +42,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             }
             refreshActive = false
             activeButtons = true
-            view = "History"
+            view = View.HISTORY
             historyViewState.reset()
         }
     }
@@ -59,11 +62,11 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             }
             refreshActive = false
             activeButtons = true
-            view = "Management"
+            view = View.MANAGE
             historyViewState.reset()
         }
     }
-    fun onServerSelect(selectView : String, setConfig : Pair<String, Config>?) {
+    fun onServerSelect(selectView : View, setConfig : Pair<String, Config>?) {
         selectServerDropDownState = false
         selectedConfig = setConfig
         historyViewState.reset()

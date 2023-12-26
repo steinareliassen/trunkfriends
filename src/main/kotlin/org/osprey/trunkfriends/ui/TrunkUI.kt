@@ -37,7 +37,7 @@ fun App(state: UIState) {
     val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
-        if (state.view == "Add server") {
+        if (state.view == View.ADD_SERVER) {
             // Authenticate view, without header
             authenticateView(remember { AuthState() }, state)
         }
@@ -55,7 +55,7 @@ fun App(state: UIState) {
             ButtonRowHeader(state)
         }
 
-        if (state.view == "History") {
+        if (state.view == View.HISTORY) {
             state.historyViewState.page = 0
             state.historyViewState.time = 0
             historyListing(
@@ -65,27 +65,27 @@ fun App(state: UIState) {
                 onNameChange = { state.zoomedName = it }
             )
         }
-        if (state.view == "List") {
+        if (state.view == View.LIST) {
             state.historyViewState.page = 0
             state.historyViewState.time = 0
             overviewListing(
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
-                state.zoomedName,
-                onNameChange = { state.zoomedName = it }
+                onNameChange = {
+                    state.zoomedName = it
+                    state.view = View.HISTORY
+                }
             )
         }
-        if (state.view == "Manage") {
+        if (state.view == View.MANAGE) {
             addRemoveView(state)
         }
-        if (state.view == "About") aboutView()
-        if (state.view == "Refresh") {
+        if (state.view == View.ABOUT) aboutView()
+        if (state.view == View.REFRESH ||
+            state.view == View.EXECUTE_MANAGEMENT) {
             refreshView(state)
         }
-        if (state.view == "ExecuteManagement") {
-            refreshView(state)
-        }
-        if (state.view == "Pastebag") {
+        if (state.view == View.PASTE_BAG) {
             pasteView(state)
         }
     }
@@ -109,11 +109,11 @@ fun ButtonRowHeader(state : UIState) {
         }
 
         val dropDownItems = listOf(
-            Triple("About", "About", false),
-            Triple("List Overview", "List", true),
-            Triple("History Overview", "History", true),
-            Triple("Refresh followers", "Refresh", true),
-            Triple("Manage followers", "Manage", true),
+            Triple("About", View.ABOUT, false),
+            Triple("List Overview", View.LIST, true),
+            Triple("History Overview", View.HISTORY, true),
+            Triple("Refresh followers", View.REFRESH, true),
+            Triple("Manage followers", View.MANAGE, true),
 
             )
         DropdownMenu(
@@ -150,7 +150,7 @@ fun ButtonRowHeader(state : UIState) {
             state.configMap.forEach { configPair ->
                 DropdownMenuItem(
                     onClick = {
-                        state.onServerSelect("History", configPair)
+                        state.onServerSelect(View.HISTORY, configPair)
                     }
                 ) {
                     Text(configPair.first)
@@ -158,7 +158,7 @@ fun ButtonRowHeader(state : UIState) {
             }
             DropdownMenuItem(
                 onClick = {
-                    state.onServerSelect("Add server", null)
+                    state.onServerSelect(View.ADD_SERVER, null)
                 }
             ) {
                 Text("Add new server")
@@ -167,7 +167,7 @@ fun ButtonRowHeader(state : UIState) {
 
         if (state.selectedConfig != null) {
             CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
-                state.view = "Pastebag"
+                state.view = View.PASTE_BAG
             }
         }
 

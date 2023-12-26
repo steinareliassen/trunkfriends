@@ -15,6 +15,7 @@ import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.BannerRow
 import org.osprey.trunkfriends.ui.CommonButton
 import org.osprey.trunkfriends.ui.UIState
+import org.osprey.trunkfriends.ui.View
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 import java.nio.file.Files
@@ -161,7 +162,7 @@ on this account.
                     File("$configPath/config.json").printWriter().use { pw ->
                         pw.println(mapper.writeValueAsString(config))
                     }
-                    uiState.view = "History"
+                    uiState.view = View.HISTORY
                     uiState.configMap.add(
                         (configKey to config )
                     )
@@ -174,7 +175,7 @@ on this account.
 
         Row(modifier = Modifier.fillMaxWidth()) {
             CommonButton(text = "Cancel server registration") {
-                uiState.view = "History"
+                uiState.view = View.HISTORY
             }
         }
     }

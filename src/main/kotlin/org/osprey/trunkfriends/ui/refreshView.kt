@@ -24,27 +24,29 @@ val bannerRefresh =
 
 fun executeManagement(count : Int, action : String) =
     """
-    You have $count addresses you wish to $action. There is a delay between each address in order to not spam the
-    server. Please note, that while you can cancel the action at any time, the addresses that has had the action
-    applied to them will not be rolled back. If you have 20 followers you want to unfollow, and cancel after 5,
-    you will still have unfollowed 5 followers.
+    You are about to do the following:
+    $action $count accounts. 
+    There is a delay between each address in order to not spam the server. Please note, that while you can cancel 
+    the action at any time, the addresses that has had the action applied to them will not be rolled back. If you 
+    have 20 followers you want to unfollow, and cancel after 5, you will still have unfollowed 5 followers.
                             """.trimIndent()
 @Composable
-fun refreshView(state: UIState, action: String? = null, count : Int = 0) {
+fun refreshView(state: UIState) {
+    val action = state.context
     Text("\n")
 
-    if (state.activeButtons)
+    // Need to solve this in a better way.
+    if (state.activeButtons) {
         BannerRow(
-            // Need to solve this in a better way.
             if (action == null)
                 bannerRefresh
             else
-                executeManagement(count, action)
-            ,
+                executeManagement(state.actionList.size, action),
             16f
         )
-    else
+    } else {
         BannerRow(state.feedback, 16f)
+    }
     Text("\n")
 
     if (!state.activeButtons) {
@@ -77,10 +79,13 @@ fun refreshView(state: UIState, action: String? = null, count : Int = 0) {
                     if (action == null)
                         state.startListRefresh()
                     else
-                        state.startExecuteManagementAction(action, listOf())
+                        state.startExecuteManagementAction(action, state.actionList)
                 }
             ) {
-                Text("Start importing following / followers list")
+                if (action == null)
+                    Text("Start importing following / followers list")
+                else
+                    Text("$action ${state.actionList.size} accounts")
             }
         }
     }

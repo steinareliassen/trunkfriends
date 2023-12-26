@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun addRemoveView(state: UIState) {
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val text = rememberSaveable { mutableStateOf("") }
     Text("\n")
 
     Row(
@@ -40,7 +41,7 @@ fun addRemoveView(state: UIState) {
                 text = "Enter accounts below, one per line, separated only by newline (no comma, etc)\n",
                 fontSize = TextUnit(16f, TextUnitType.Sp)
             )
-            val text = rememberSaveable { mutableStateOf("") }
+
             TextField(
                 value = text.value,
                 onValueChange = { text.value = it }, modifier = Modifier
@@ -66,13 +67,17 @@ fun addRemoveView(state: UIState) {
                 )
             }
             CommonButton(text = "Unfollow selected") {
-                state.clearSelect()
+                state.view = View.EXECUTE_MANAGEMENT
+                state.context = "Unfollow"
+                state.actionList = text.value.split("\n")
             }
             CommonButton(text = "Follow selected") {
-                state.clearSelect()
+                state.view = View.EXECUTE_MANAGEMENT
+                state.context = "Follow"
             }
             CommonButton(text = "Add to list") {
-                state.clearSelect()
+                state.view = View.EXECUTE_MANAGEMENT
+                state.context = "Add to list"
             }
 
         }

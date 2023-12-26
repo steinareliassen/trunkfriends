@@ -5,9 +5,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +23,6 @@ import java.util.*
 fun overviewListing(
     historyState: HistoryViewState,
     serverUser: String,
-    zoomedName: String?,
     onNameChange: (String?) -> Unit
 ) {
     fun timestampToDateString(timestamp: Long) =
@@ -35,9 +32,6 @@ fun overviewListing(
             .format(Instant.ofEpochSecond(timestamp / 1000)).run {
                 this.substring(0..this.length - 4).replace("T", " ")
             }
-
-    // Did we want to return from a zoomed view? If so, reset, and return so UI can be redrawn
-    if (historyState.resetHistoryPage(zoomedName)) return
 
     val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
 
@@ -70,6 +64,18 @@ server with requests. Once followers are imported, you will be see them here.
             CommonButton(text = "Search") {
             }
 
+            Button(
+                enabled = true,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = { true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Sort"
+                )
+                Text("Sort")
+            }
         }
 
         HistoryHandler().createListCards(list).chunked(14).apply {
@@ -84,16 +90,9 @@ server with requests. Once followers are imported, you will be see them here.
                 Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
                     drop(historyState.page).first().forEach { historyCard ->
                         Row(modifier = Modifier.align(Alignment.Start)) {
-                            if (zoomedName != null) {
-                                Column {
-                                    Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, historyState, onNameChange)
-                                }
-                            } else {
-                                followCard(historyCard, historyState) {
-                                    onNameChange(it)
-                                    historyState.storeHistoryPage()
-                                }
+                            followCard(historyCard, historyState) {
+                                onNameChange(it)
+                                historyState.storeHistoryPage()
                             }
                         }
                     }
