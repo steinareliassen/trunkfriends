@@ -12,23 +12,62 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import org.osprey.trunkfriends.ui.history.followCard
 
+enum class SortStyle {
+    FOLLOW_STATUS,
+    SERVER,
+    ACCOUNT
+}
+
+class CompareUser(
+    private val server: String,
+    private val sortStyle: SortStyle
+) : Comparator<CurrentUser> {
+    override fun compare(o1: CurrentUser, o2: CurrentUser): Int {
+        val first = serverify(o1.acct)
+        val second = serverify(o2.acct)
+
+        if (sortStyle == SortStyle.FOLLOW_STATUS) {
+            // Follower and following different?
+            if ((o1.follower && !o2.follower) && (o1.following && !o2.following)) return -1
+            if ((!o1.follower && o2.follower) && (!o1.following && o2.following)) return 1
+
+            // Following different?
+            if ((o1.following && !o2.following)) return -1
+            if ((!o1.following && o2.following)) return 1
+
+            // Followers different?
+            if ((o1.follower && !o2.follower)) return -1
+            if ((!o1.follower && o2.follower)) return 1
+
+        }
+        // If we sort by server, and servers are different, use this.
+        if (sortStyle == SortStyle.SERVER) {
+            val compareServers = first.split("@")[1].compareTo(second.split("@")[1])
+            if (compareServers != 0) {
+                return compareServers
+            }
+        }
+
+        // Default, compare accounts, checking sortStyle ACCOUNT is pointless
+        return first.compareTo(second)
+    }
+
+    private fun serverify(username : String) = if (username.contains("@")) username else "$username@$server"
+}
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
     serverUser: String,
-    zoomedName: String?,
     onNameChange: (String?, View) -> Unit
 ) {
 
-    if (historyState.resetHistoryPage(zoomedName)) {
-        onNameChange(null, historyState.returnView)
-        return
-    }
-
+    // Create a list of accounts from history-map, keeping the latest account follow / following status
     val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
+        .sortedWith(CompareUser(serverUser.split("/")[0], SortStyle.FOLLOW_STATUS))
 
     Column(
         modifier = Modifier

@@ -38,7 +38,7 @@ class HistoryViewState {
     }
 
     fun resetHistoryPage(zoomedName : String?): Boolean =
-        if (zoomedName == null && returnPage != 0) {
+        if (zoomedName == null && returnPage != 0 && returnView != View.HISTORY) {
             page = returnPage
             returnPage = 0
             true

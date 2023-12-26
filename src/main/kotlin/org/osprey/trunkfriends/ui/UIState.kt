@@ -74,6 +74,16 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
         view = selectView
     }
 
+    val changeZoom = { name : String?, oldView : View ->
+        zoomedName = name
+        if (zoomedName != null) {
+            historyViewState.returnView = oldView
+            view = View.HISTORY
+        } else {
+            view = historyViewState.returnView
+        }
+    }
+
     fun clearSelect() {
         historyViewState.pasteBag.clear()
     }

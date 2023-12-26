@@ -133,7 +133,7 @@ server with requests. Once followers are imported, you will be see them here.
                             if (zoomedName != null) {
                                 Column {
                                     Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, historyState, View.HISTORY, onNameChange)
+                                    followCard(historyCard, historyState, View.HISTORY)
                                 }
                             } else {
                                 followCard(historyCard, historyState, View.HISTORY) { name, view ->
@@ -180,7 +180,7 @@ fun followCard(
     historyCard: HistoryCard,
     historyState: HistoryViewState,
     view: View,
-    onNameChange: (String?, View) -> Unit
+    onNameChange: ((String?, View) -> Unit)? = null
 ) {
     Card(
         elevation = 1.dp,
@@ -245,9 +245,11 @@ fun followCard(
                         }
                     )
                 }
-                Column {
-                    zoomButton(text = "\uD83D\uDD0D") {
-                        onNameChange(acct, View.HISTORY)
+                if (onNameChange != null) {
+                    Column {
+                        zoomButton(text = "\uD83D\uDD0D") {
+                            onNameChange(acct, view)
+                        }
                     }
                 }
             }
