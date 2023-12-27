@@ -9,7 +9,6 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,10 +18,10 @@ import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import org.osprey.trunkfriends.ui.history.followCard
 
-enum class SortStyle {
-    FOLLOW_STATUS,
-    SERVER,
-    ACCOUNT
+enum class SortStyle(val text : String) {
+    FOLLOW_STATUS("Following/follower"),
+    SERVER("Server name"),
+    ACCOUNT("Account")
 }
 
 class CompareUser(
@@ -107,28 +106,29 @@ server with requests. Once followers are imported, you will be see them here.
                 if (searchText.value != null) searchText.value = null
                 else searchText.value = historyState.searchText
             }
+            Box {
+                Button(
+                    enabled = true,
+                    modifier = Modifier.padding(4.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                    onClick = { sortDropDown.value = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Sort"
+                    )
+                    Text("Sort")
+                }
 
-            Button(
-                enabled = true,
-                modifier = Modifier.padding(4.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { sortDropDown.value = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Sort"
-                )
-                Text("Sort")
-            }
-
-            DropdownMenu(
-                expanded = sortDropDown.value,
-                onDismissRequest = { sortDropDown.value = false }
-            ) {
-                SortStyle.values().forEach {
-                    CommonDropDownItem(text = it.name) {
-                        sortState.value = SortStyle.valueOf(it.name)
-                        sortDropDown.value = false
+                DropdownMenu(
+                    expanded = sortDropDown.value,
+                    onDismissRequest = { sortDropDown.value = false }
+                ) {
+                    SortStyle.values().forEach {
+                        CommonDropDownItem(text = it.text) {
+                            sortState.value = SortStyle.valueOf(it.name)
+                            sortDropDown.value = false
+                        }
                     }
                 }
             }

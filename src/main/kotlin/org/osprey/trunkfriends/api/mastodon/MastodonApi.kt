@@ -1,10 +1,11 @@
 package org.osprey.trunkfriends.api.mastodon
 
-import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.*
+import org.osprey.trunkfriends.managementhandler.sleepAndCheck
 import org.osprey.trunkfriends.util.mapper
+import java.io.IOException
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -28,7 +29,7 @@ class MastodonApi(
             UserClass::class.java
         ).id
 
-    fun lookupId(account : String) =
+    private fun lookupId(account : String) =
         mapper.readValue(
             HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder()
@@ -41,45 +42,55 @@ class MastodonApi(
             UserClass::class.java
         ).id
 
-    override suspend fun executeManagementAction(
-        accounts: List<String>,
-        isCancelled : () -> Boolean,
-        funk: (String) -> Unit,
-        action: String
-    ) {
-        accounts.forEach { follower ->
-            val id = lookupId(follower)
-            funk("Action: $action executed on $follower")
-            when (action) {
-                "Follow" -> addFollower(id ,follower)
-                "Unfollow" -> removeFollower(follower)
-                "AddToList" -> addToList("SOME_LIST", follower)
-            }
-            if (isCancelled()) throw InterruptedException()
-            sleepAndCheck(isCancelled)
+    // TODO: Refactor into shared method as it shares most of the code with unfollow
+    override fun addFollower(follower: String) {
+        lookupId(follower).let { id ->
+            mapper.readValue(
+                HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create("https://${config.server}/api/v1/accounts/$id/follow"))
+                        .header("Authorization", config.bearer)
+                        .method("POST", HttpRequest.BodyPublishers.noBody())
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                ).also { response ->
+                    if (response.statusCode() != 200) {
+                        // Did we use an older token without read / write access?
+                        if (response.body().contains("This action is outside the authorized scopes"))
+                            throw IOException("You have a read only token, a read/write token is required.")
+                        throw IOException("Got error code ${response.statusCode()}")
+                    }
+                }.body(),
+                FollowStatus::class.java
+            )
         }
     }
-    override fun addFollower(id : String, follower: String) {
-        println("Adding follower : $id $follower")
-    }
 
-    override fun removeFollower(follower: String) {
-        lookupId(follower)
-    }
+    override fun removeFollower(follower: String): FollowStatus =
+        lookupId(follower).let { id ->
+            mapper.readValue(
+                HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                        .uri(URI.create("https://${config.server}/api/v1/accounts/$id/unfollow"))
+                        .header("Authorization", config.bearer)
+                        .method("POST", HttpRequest.BodyPublishers.noBody())
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                ).also { response ->
+                    if (response.statusCode() != 200) {
+                        // Did we use an older token without read / write access?
+                        if (response.body().contains("This action is outside the authorized scopes"))
+                            throw IOException("You have a read only token, a read/write token is required.")
+                        throw IOException("Got error code ${response.statusCode()}")
+                    }
+                }.body(),
+                FollowStatus::class.java
+            )
+        }
 
     override fun addToList(list: String, follower: String) {
         TODO("Not yet implemented")
     }
-
-    fun pingUser(domain: String, user: String) =
-            HttpClient.newHttpClient().send(
-                HttpRequest.newBuilder()
-                    .uri(URI.create("https://${domain}/api/v2/search?q=%40$user%40$domain&resolve=false&limit=11"))
-                    .header("Authorization", config.bearer)
-                    .method("GET", HttpRequest.BodyPublishers.noBody())
-                    .build(),
-                HttpResponse.BodyHandlers.ofString()
-            ).body().toString()
 
     override suspend fun getFollow(
         userId: String,
@@ -101,13 +112,6 @@ class MastodonApi(
             if (isCancelled()) throw InterruptedException()
         }
         return follow
-    }
-
-    suspend fun sleepAndCheck(isCancelled : () -> Boolean) {
-        (1..15).forEach {
-            delay(100)
-            if (isCancelled()) throw InterruptedException()
-        }
     }
 
     override fun getCurrentUsers(following : List<UserClass>, followers : List<UserClass>) : Map<String, CurrentUser> {

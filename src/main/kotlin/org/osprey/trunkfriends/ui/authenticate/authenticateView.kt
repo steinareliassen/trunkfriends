@@ -23,12 +23,31 @@ import java.nio.file.Paths
 
 @Composable
 fun authenticateView(state: AuthState, uiState: UIState) {
+
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val api = MastodonAuthApi()
+
+    fun registerClient() {
+        println("Obtaining new token")
+        val client = api.registerClient(state.domain)
+        state.clientId = client.clientId
+        state.clientSecret = client.clientSecret
+        state.url = "https://${state.domain}/oauth/authorize?client_id=${client.clientId}" +
+                "&scope=read%20follow" +
+                "&redirect_uri=urn:ietf:wg:oauth:2.0:oob" +
+                "&response_type=code"
+        state.activeStep = "step2"
+    }
 
     Column {
 
         Text("\n")
+
+        // Did we come here to get a new token for an already registered instance?
+        if (state.skipDomain) {
+            state.skipDomain = false
+            registerClient()
+        }
 
         if (state.activeStep == "") {
             BannerRow(
@@ -49,15 +68,7 @@ Press "ACTIVATE" after you enter the domain name.
                     label = { Text("The domain you want to register") }
                 )
                 CommonButton(text = "Activate") {
-                    val client = api.registerClient(state.domain)
-                    state.clientId = client.clientId
-                    state.clientSecret = client.clientSecret
-                    state.url = "https://${state.domain}/oauth/authorize?client_id=${client.clientId}" +
-                            "&scope=read" +
-                            "&redirect_uri=urn:ietf:wg:oauth:2.0:oob" +
-                            "&response_type=code"
-                    state.activeStep = "step2"
-
+                    registerClient()
                 }
 
             }
@@ -65,6 +76,19 @@ Press "ACTIVATE" after you enter the domain name.
 
         if (state.activeStep == "step2" || state.activeStep == "step3") {
             BannerRow(
+                if (uiState.view == View.NEW_TOKEN) {
+                    """
+Note: When you obtain a new token, the old one might still be register on the instance you use.
+You can go to Preferences -> Account -> Authorized apps and revoke the oldest Trunkfriends
+authorization you find there. 
+
+Copy the URL below by pressing "Copy URL" and paste it into a browser that is logged in 
+to your mastodon instance you wish to get a new token for and press enter to go to that page. 
+If you are not logged in, you will be asked to do so. Do not attempt to copy the URL by 
+selecting the text, only press the "Copy URL" button".
+                        
+                    """.trimIndent()
+                } else
                 """
 Now that this is done, you need to verify the activation with your mastodon instance.
 To do that, copy the URL below by pressing "Copy URL" and paste it into a browser that is 
@@ -91,7 +115,6 @@ text, only press the "Copy URL" button".
 
         }
 
-
         if (state.activeStep == "step3") {
             BannerRow(
                 """
@@ -116,7 +139,6 @@ into the clipboard. Do this, and press the "PASTE" button to paste the code in.
             }
 
         }
-
 
         if (state.activeStep == "step4") {
             BannerRow(
@@ -162,11 +184,17 @@ on this account.
                     File("$configPath/config.json").printWriter().use { pw ->
                         pw.println(mapper.writeValueAsString(config))
                     }
-                    uiState.view = View.HISTORY
+
+                    // If a config with the same key exists, remove it (happens when obtaining
+                    // new token). This config would have an outdated token.
+                    uiState.configMap.removeIf { it.first == configKey }
+
+                    // Add the new config
                     uiState.configMap.add(
-                        (configKey to config )
+                        (configKey to config)
                     )
-                    uiState.selectedConfig = (configKey to config )
+                    uiState.selectedConfig = (configKey to config)
+                    uiState.view = View.HISTORY
                 }
 
             }

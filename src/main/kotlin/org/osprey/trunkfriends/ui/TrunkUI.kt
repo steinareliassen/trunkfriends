@@ -37,11 +37,20 @@ fun App(state: UIState) {
     val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
-        if (state.view == View.ADD_SERVER) {
+        if (state.view == View.ADD_SERVER || state.view == View.NEW_TOKEN) {
             // Authenticate view, without header
-            authenticateView(remember { AuthState() }, state)
-        }
-        else if (state.zoomedName != null) {
+            authenticateView(
+                remember {
+                    AuthState(
+                        if (state.view == View.NEW_TOKEN)
+                            state.selectedConfig?.second?.server
+                        else
+                            null
+                    )
+                },
+                state
+            )
+        } else if (state.zoomedName != null) {
             // Zoomed history view, with clear search button
             Row(modifier = Modifier.fillMaxWidth()) {
                 CommonButton(
@@ -79,7 +88,10 @@ fun App(state: UIState) {
         }
         if (state.view == View.ABOUT) aboutView()
         if (state.view == View.REFRESH ||
-            state.view == View.EXECUTE_MANAGEMENT) {
+            state.view == View.EXECUTE_MANAGEMENT
+        ) {
+            // Make sure we come with a blank context if we dont use management actions
+            if (state.view == View.REFRESH) state.context = null
             refreshView(state)
         }
         if (state.view == View.PASTE_BAG) {
@@ -89,7 +101,7 @@ fun App(state: UIState) {
 }
 
 @Composable
-fun ButtonRowHeader(state : UIState) {
+fun ButtonRowHeader(state: UIState) {
     Row(modifier = Modifier.fillMaxWidth()) {
 
         Button(
@@ -111,6 +123,7 @@ fun ButtonRowHeader(state : UIState) {
             Triple("History Overview", View.HISTORY, true),
             Triple("Refresh followers", View.REFRESH, true),
             Triple("Manage followers", View.MANAGE, true),
+            Triple("Obtain new token", View.NEW_TOKEN, true),
 
             )
         DropdownMenu(
@@ -176,6 +189,7 @@ fun ButtonRowHeader(state : UIState) {
     )
 
 }
+
 fun main() = application {
 
     val rootPath = FileUtils.getUserDirectoryPath() + "/.trunkfriends"

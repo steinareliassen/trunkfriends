@@ -5,6 +5,7 @@ enum class View {
     HISTORY,
     LIST,
     MANAGE,
+    NEW_TOKEN,
     ABOUT,
     REFRESH,
     EXECUTE_MANAGEMENT,

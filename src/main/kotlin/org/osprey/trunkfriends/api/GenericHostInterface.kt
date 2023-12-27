@@ -7,9 +7,9 @@ abstract class GenericHostInterface(protected val config: Config) {
 
     abstract fun getUserId() : String
 
-    abstract fun addFollower(id: String, follower: String)
+    abstract fun addFollower(follower: String)
 
-    abstract fun removeFollower(follower: String)
+    abstract fun removeFollower(follower: String) : FollowStatus
 
     abstract fun addToList(list: String, follower: String)
 
@@ -19,12 +19,5 @@ abstract class GenericHostInterface(protected val config: Config) {
         isCancelled : () -> Boolean,
         funk: (String) -> Unit
     ) : List<UserClass>
-
-    abstract suspend fun executeManagementAction(
-        accounts: List<String>,
-        isCancelled: () -> Boolean,
-        funk: (String) -> Unit,
-        action: String
-    )
 
 }
