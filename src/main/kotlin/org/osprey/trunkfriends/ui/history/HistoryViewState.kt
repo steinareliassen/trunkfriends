@@ -11,7 +11,9 @@ class HistoryViewState {
     var time by mutableStateOf(0L)
     val pasteBag = mutableStateListOf<String>()
     var returnView = View.HISTORY
-    var returnPage by mutableStateOf(0)
+    private var returnPage by mutableStateOf(0)
+    private var returnTime by mutableStateOf(0L)
+    private var returnTimeslot by mutableStateOf(0)
 
     fun reset() {
         page = 0
@@ -34,13 +36,19 @@ class HistoryViewState {
 
     fun storeHistoryPage() {
         returnPage = page
+        returnTime = time
+        returnTimeslot = timeslotPage
         page = 0
     }
 
     fun resetHistoryPage(zoomedName : String?): Boolean =
-        if (zoomedName == null && returnPage != 0 && returnView != View.HISTORY) {
+        if (zoomedName == null && (returnPage != 0 || returnTime != 0L)) {
             page = returnPage
+            time = returnTime
+            timeslotPage = returnTimeslot
             returnPage = 0
+            returnTime = 0
+            returnTimeslot = 0
             true
         } else false
 

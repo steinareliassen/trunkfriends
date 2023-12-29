@@ -60,19 +60,19 @@ fun addRemoveView(state: UIState) {
             CommonButton(text = "Insert from bag") {
                 text.value = state.historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
             }
-            val managementCommand = { context : String ->
+            val managementCommand = { context : ManagementAction ->
                 state.view = View.EXECUTE_MANAGEMENT
                 state.context = context
                 state.actionList = text.value.split("\n")
             }
             CommonButton(text = "Unfollow selected") {
-                managementCommand("Unfollow")
+                managementCommand(ManagementAction.UNFOLLOW)
             }
             CommonButton(text = "Follow selected") {
-                managementCommand("Follow")
+                managementCommand(ManagementAction.FOLLOW)
             }
             CommonButton(text = "Add to list") {
-                managementCommand("Add to list")
+                managementCommand(ManagementAction.ADD_TO_LIST)
             }
 
         }

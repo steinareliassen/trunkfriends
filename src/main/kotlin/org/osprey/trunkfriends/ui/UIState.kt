@@ -20,7 +20,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var zoomedName by mutableStateOf<String?>(null)
 
     var view by mutableStateOf(View.ABOUT)
-    var context by mutableStateOf<String?>(null)
+    var context by mutableStateOf<ManagementAction?>(null)
     var actionList = listOf<String>()
     var activeButtons by mutableStateOf(true)
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
@@ -47,7 +47,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
         }
     }
 
-    fun startExecuteManagementAction(action: String, accounts: List<String>, list: String? = null) {
+    fun startExecuteManagementAction(action: ManagementAction, accounts: List<String>, list: String? = null) {
         if (refreshActive) return
         refreshActive = true
         coroutineScope.launch {

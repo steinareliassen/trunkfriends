@@ -32,7 +32,6 @@ fun App(state: UIState) {
 
     // Todo: startpoint for scalable UI
     /*val configuration = LocalConfiguration.current
-
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
@@ -119,12 +118,11 @@ fun ButtonRowHeader(state: UIState) {
 
         val dropDownItems = listOf(
             Triple("About", View.ABOUT, false),
-            Triple("List Overview", View.LIST, true),
+            Triple("Follower Overview", View.LIST, true),
             Triple("History Overview", View.HISTORY, true),
             Triple("Refresh followers", View.REFRESH, true),
             Triple("Manage followers", View.MANAGE, true),
             Triple("Obtain new token", View.NEW_TOKEN, true),
-
             )
         DropdownMenu(
             expanded = state.menuDrownDownState,

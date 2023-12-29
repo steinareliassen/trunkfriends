@@ -2,10 +2,11 @@ package org.osprey.trunkfriends.managementhandler
 
 import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.config.Config
+import org.osprey.trunkfriends.ui.ManagementAction
 
 suspend fun managementAction(
     accounts: List<String>,
-    action: String,
+    action: ManagementAction,
     list: String?,
     selectedConfig : Pair<String, Config>,
     isCancelled : () -> Boolean,
@@ -17,10 +18,13 @@ suspend fun managementAction(
             accounts.forEach { follower ->
                 feedbackFunction("Action: $action executed on $follower")
                 when (action) {
-                    "Follow" -> addFollower(follower)
-                    "Unfollow" -> removeFollower(follower)
-                    "Add to list" -> addToList(listId ?: throw IllegalStateException("Should not happen"), follower)
-
+                    ManagementAction.FOLLOW -> addFollower(follower)
+                    ManagementAction.UNFOLLOW -> removeFollower(follower)
+                    ManagementAction.ADD_TO_LIST ->
+                        addToList(
+                            listId ?: throw IllegalStateException("Should not happen"),
+                            follower
+                        )
                 }
                 sleepAndCheck(isCancelled)
             }

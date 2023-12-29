@@ -24,7 +24,7 @@ val bannerRefresh =
     with requests. Most instances have a max request pr 5 minute interval.
                             """.trimIndent()
 
-fun executeManagement(list: List<String>, action: String) =
+fun executeManagement(list: List<String>, action: ManagementAction) =
     """
     You are about to do the following:
     $action ${list.size} accounts. The 10 first are:
@@ -83,7 +83,7 @@ fun refreshView(state: UIState) {
         ) {
             Row {
 
-                if (action == "Add to list") {
+                if (action == ManagementAction.ADD_TO_LIST) {
                     val lists = state.selectedConfig?.second?.hostInterface?.getLists()
                         ?: throw IllegalStateException("Should not happen")
                     DropdownMenu(
@@ -114,7 +114,7 @@ fun refreshView(state: UIState) {
                 }
 
                 Button(
-                    enabled = action != "Add to list" || selectedList.value != null,
+                    enabled = action != ManagementAction.ADD_TO_LIST|| selectedList.value != null,
                     modifier = Modifier.padding(4.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                     onClick = {
@@ -135,7 +135,7 @@ fun refreshView(state: UIState) {
                 }
             }
 
-            if (action == "Add to list") {
+            if (action == ManagementAction.ADD_TO_LIST) {
                 BannerRow("Selected list: ${selectedList.value ?: "Select list from dropdown"}")
             }
         }
