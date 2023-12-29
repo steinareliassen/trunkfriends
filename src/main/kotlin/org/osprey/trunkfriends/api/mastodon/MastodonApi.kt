@@ -73,7 +73,7 @@ class MastodonApi(
         lookupId(follower).let { id ->
             HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder()
-                    .uri(URI.create("https://${config.server}/api/v1/lists/$listId/accounts?account_ids=$id"))
+                    .uri(URI.create("https://${config.server}/api/v1/lists/$listId/accounts?account_ids[]=$id"))
                     .header("Authorization", config.bearer)
                     .method("POST", HttpRequest.BodyPublishers.noBody())
                     .build(),

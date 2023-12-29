@@ -95,15 +95,24 @@ server with requests. Once followers are imported, you will be see them here.
         }
         Row(modifier = Modifier.fillMaxWidth()) {
             TextField(
+                singleLine = true,
                 modifier = Modifier.width(500.dp),
-                enabled = true,
+                enabled = searchText.value == null,
                 value = historyState.searchText,
-                onValueChange = { historyState.searchText = it },
+                onValueChange = {
+                    historyState.searchText = it
+                                },
                 label = { Text("Text to search for") }
             )
-            CommonButton(text = if (searchText.value == null) "Search" else "Clear") {
+            CommonButton(
+                enabled = historyState.searchText.isNotBlank(),
+                text = if (searchText.value == null) "Search" else "Clear"
+            ) {
                 historyState.page = 0
-                if (searchText.value != null) searchText.value = null
+                if (searchText.value != null) {
+                    searchText.value = null
+                    historyState.searchText = ""
+                }
                 else searchText.value = historyState.searchText
             }
             Box {

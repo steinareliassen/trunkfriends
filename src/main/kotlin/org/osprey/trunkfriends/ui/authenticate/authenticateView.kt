@@ -28,7 +28,6 @@ fun authenticateView(state: AuthState, uiState: UIState) {
     val api = MastodonAuthApi()
 
     fun registerClient() {
-        println("Obtaining new token")
         val client = api.registerClient(state.domain)
         state.clientId = client.clientId
         state.clientSecret = client.clientSecret
@@ -61,6 +60,7 @@ Press "ACTIVATE" after you enter the domain name.
             Text("\n")
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
+                    singleLine = true,
                     modifier = Modifier.width(500.dp),
                     enabled = true,
                     value = state.domain,

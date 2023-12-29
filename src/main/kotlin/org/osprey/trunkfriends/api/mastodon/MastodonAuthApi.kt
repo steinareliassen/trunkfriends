@@ -23,6 +23,7 @@ class MastodonAuthApi {
             ).body(),
             UserClass::class.java
         )
+
     fun obtainToken(domain: String,
                     clientId: String,
                     clientSecret: String,
