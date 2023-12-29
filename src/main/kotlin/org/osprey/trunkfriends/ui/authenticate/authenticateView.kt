@@ -33,7 +33,7 @@ fun authenticateView(state: AuthState, uiState: UIState) {
         state.clientId = client.clientId
         state.clientSecret = client.clientSecret
         state.url = "https://${state.domain}/oauth/authorize?client_id=${client.clientId}" +
-                "&scope=read%20follow" +
+                "&scope=read%20write%20follow" +
                 "&redirect_uri=urn:ietf:wg:oauth:2.0:oob" +
                 "&response_type=code"
         state.activeStep = "step2"
