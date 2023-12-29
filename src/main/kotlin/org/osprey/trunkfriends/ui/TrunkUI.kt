@@ -150,7 +150,7 @@ fun ButtonRowHeader(state: UIState) {
                 imageVector = Icons.Default.Add,
                 contentDescription = "Servers"
             )
-            Text("select server")
+            Text("Select server")
         }
 
         DropdownMenu(

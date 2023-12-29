@@ -14,9 +14,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.ClipboardManager
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
@@ -24,7 +21,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun addRemoveView(state: UIState) {
-    val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val text = rememberSaveable { mutableStateOf("") }
     Text("\n")
 
@@ -62,22 +58,21 @@ fun addRemoveView(state: UIState) {
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             CommonButton(text = "Insert from bag") {
-                clipboardManager.setText(
-                    AnnotatedString(state.getSelected())
-                )
+                text.value = state.historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
             }
-            CommonButton(text = "Unfollow selected") {
+            val managementCommand = { context : String ->
                 state.view = View.EXECUTE_MANAGEMENT
-                state.context = "Unfollow"
+                state.context = context
                 state.actionList = text.value.split("\n")
             }
+            CommonButton(text = "Unfollow selected") {
+                managementCommand("Unfollow")
+            }
             CommonButton(text = "Follow selected") {
-                state.view = View.EXECUTE_MANAGEMENT
-                state.context = "Follow"
+                managementCommand("Follow")
             }
             CommonButton(text = "Add to list") {
-                state.view = View.EXECUTE_MANAGEMENT
-                state.context = "Add to list"
+                managementCommand("Add to list")
             }
 
         }

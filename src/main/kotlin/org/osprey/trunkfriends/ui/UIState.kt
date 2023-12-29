@@ -47,7 +47,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
         }
     }
 
-    fun startExecuteManagementAction(action: String, accounts: List<String>) {
+    fun startExecuteManagementAction(action: String, accounts: List<String>, list: String? = null) {
         if (refreshActive) return
         refreshActive = true
         coroutineScope.launch {
@@ -55,6 +55,7 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             managementAction(
                 accounts,
                 action,
+                list,
                 selectedConfig ?: throw IllegalStateException("Should not be null"),
                 { !refreshActive }
             ) { param ->

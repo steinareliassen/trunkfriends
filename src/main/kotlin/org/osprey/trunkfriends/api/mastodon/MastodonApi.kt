@@ -42,13 +42,12 @@ class MastodonApi(
             UserClass::class.java
         ).id
 
-    // TODO: Refactor into shared method as it shares most of the code with unfollow
-    override fun addFollower(follower: String) {
+    fun addRemoveFollower(follower: String, action: String) : FollowStatus =
         lookupId(follower).let { id ->
             mapper.readValue(
                 HttpClient.newHttpClient().send(
                     HttpRequest.newBuilder()
-                        .uri(URI.create("https://${config.server}/api/v1/accounts/$id/follow"))
+                        .uri(URI.create("https://${config.server}/api/v1/accounts/$id/$action"))
                         .header("Authorization", config.bearer)
                         .method("POST", HttpRequest.BodyPublishers.noBody())
                         .build(),
@@ -63,33 +62,46 @@ class MastodonApi(
                 }.body(),
                 FollowStatus::class.java
             )
+        }
+    override fun addFollower(follower: String) =
+        addRemoveFollower(follower, "follow")
+
+    override fun removeFollower(follower: String): FollowStatus =
+        addRemoveFollower(follower, "unfollow")
+
+    override fun addToList(listId: String, follower: String) {
+        lookupId(follower).let { id ->
+            HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder()
+                    .uri(URI.create("https://${config.server}/api/v1/lists/$listId/accounts?account_ids=$id"))
+                    .header("Authorization", config.bearer)
+                    .method("POST", HttpRequest.BodyPublishers.noBody())
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            ).also { response ->
+                if (response.statusCode() != 200) {
+                    // Did we use an older token without read / write access?
+                    if (response.body().contains("This action is outside the authorized scopes"))
+                        throw IOException("You have a read only token, a read/write token is required.")
+                    throw IOException("Got error code ${response.statusCode()}")
+                }
+            }.body()
         }
     }
 
-    override fun removeFollower(follower: String): FollowStatus =
-        lookupId(follower).let { id ->
-            mapper.readValue(
-                HttpClient.newHttpClient().send(
-                    HttpRequest.newBuilder()
-                        .uri(URI.create("https://${config.server}/api/v1/accounts/$id/unfollow"))
-                        .header("Authorization", config.bearer)
-                        .method("POST", HttpRequest.BodyPublishers.noBody())
-                        .build(),
-                    HttpResponse.BodyHandlers.ofString()
-                ).also { response ->
-                    if (response.statusCode() != 200) {
-                        // Did we use an older token without read / write access?
-                        if (response.body().contains("This action is outside the authorized scopes"))
-                            throw IOException("You have a read only token, a read/write token is required.")
-                        throw IOException("Got error code ${response.statusCode()}")
-                    }
-                }.body(),
-                FollowStatus::class.java
+    override fun getLists(): List<ListClass> {
+        val uri = "https://${config.server}/api/v1/lists"
+        val request = HttpRequest.newBuilder()
+            .uri(
+                URI.create(uri)
             )
-        }
+            .header("Authorization", config.bearer)
+            .method("GET", HttpRequest.BodyPublishers.noBody())
+            .build()
 
-    override fun addToList(list: String, follower: String) {
-        TODO("Not yet implemented")
+        val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
+        return mapper.readValue(response.body(), Array<ListClass>::class.java).toList()
+
     }
 
     override suspend fun getFollow(

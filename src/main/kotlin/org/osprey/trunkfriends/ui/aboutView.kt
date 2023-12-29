@@ -7,7 +7,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun aboutView() {
@@ -18,21 +17,19 @@ fun aboutView() {
             .background(colorTwo)
             .verticalScroll(rememberScrollState())
     ) {
-       Row {
-            Text(
+        BannerRow(
                 """
-Trunk Friends is a simple application to help you track friends on the fediverse.
+  Trunk Friends is a simple application to help you track friends on the fediverse.
 
-It is free, use "as is" software, still in alpha-state. This means it is not seen as stable
-and tested enough to be considered finished. Though it should still be usable, and it has
-been put out as we continue to read about people loosing connection to friends and followers
-because of defederation, but have a hard time tracking who they lost. 
+  It is free, use "as is" software, still in alpha-state. This means it is not seen as stable and 
+  tested enough to be considered finished. Though it should still be usable, and it has been 
+  put out as we continue to read about people loosing connection to friends and followers 
+  because of defederation, but have a hard time tracking who they lost. 
 
-This software is public domain, no copyrights reserved, no warranty given.
+  This software is public domain, no copyrights reserved, no warranty given.
 
-https://github.com/steinareliassen/trunkfriends
-        """.trimIndent(), color = Color.Black
-            )
-        }
+  https://github.com/steinareliassen/trunkfriends
+        """,18f)
+
     }
 }

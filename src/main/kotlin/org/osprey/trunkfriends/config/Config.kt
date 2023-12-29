@@ -7,5 +7,5 @@ data class Config(
     val bearer : String,
     val server : String
 ) {
-    fun hostInterfaceFactory() : GenericHostInterface = MastodonApi(this)
+    val hostInterface : GenericHostInterface = MastodonApi(this)
 }

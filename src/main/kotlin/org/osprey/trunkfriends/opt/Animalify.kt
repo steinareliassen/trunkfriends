@@ -46,8 +46,9 @@ fun toAnimal(server : String, username : String) : Pair<String,String> {
     }
 }
 
+// Transform a real history into animalified history
 
-fun main() {
+fun ymain() {
 
     val corrupted = HistoryHandler().readHistory("tech.lgbt/lettosprey").map { (curr, stri) ->
         curr.run {

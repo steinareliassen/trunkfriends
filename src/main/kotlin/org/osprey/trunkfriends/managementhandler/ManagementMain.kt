@@ -6,19 +6,21 @@ import org.osprey.trunkfriends.config.Config
 suspend fun managementAction(
     accounts: List<String>,
     action: String,
+    list: String?,
     selectedConfig : Pair<String, Config>,
     isCancelled : () -> Boolean,
     feedbackFunction: (String) -> Unit
 ) {
-
     try {
-        with(selectedConfig.second.hostInterfaceFactory()) {
+        with(selectedConfig.second.hostInterface) {
+            val listId = if (list!= null) getLists().find { it.title == list }?.id else null
             accounts.forEach { follower ->
                 feedbackFunction("Action: $action executed on $follower")
                 when (action) {
                     "Follow" -> addFollower(follower)
                     "Unfollow" -> removeFollower(follower)
-                    "AddToList" -> addToList("SOME_LIST", follower)
+                    "Add to list" -> addToList(listId ?: throw IllegalStateException("Should not happen"), follower)
+
                 }
                 sleepAndCheck(isCancelled)
             }

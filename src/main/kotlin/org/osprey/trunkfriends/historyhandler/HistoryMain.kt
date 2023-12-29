@@ -6,7 +6,7 @@ import org.osprey.trunkfriends.config.Config
 suspend fun refresh(selectedConfig : Pair<String, Config>, isCancelled : () -> Boolean,feedbackFunction: (String) -> Unit) {
     // Set up fetchers
     try {
-        val hostInterface = selectedConfig.second.hostInterfaceFactory()
+        val hostInterface = selectedConfig.second.hostInterface
 
         val historyHandler = HistoryHandler()
 
