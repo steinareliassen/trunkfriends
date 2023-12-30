@@ -16,7 +16,7 @@ suspend fun managementAction(
         with(selectedConfig.second.hostInterface) {
             val listId = if (list!= null) getLists().find { it.title == list }?.id else null
             accounts.forEach { follower ->
-                feedbackFunction("Action: $action executed on $follower")
+                feedbackFunction("Action: ${action.text} executed on $follower")
                 when (action) {
                     ManagementAction.FOLLOW -> addFollower(follower)
                     ManagementAction.UNFOLLOW -> removeFollower(follower)

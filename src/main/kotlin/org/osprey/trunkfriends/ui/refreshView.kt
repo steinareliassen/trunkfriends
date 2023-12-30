@@ -27,7 +27,7 @@ val bannerRefresh =
 fun executeManagement(list: List<String>, action: ManagementAction) =
     """
     You are about to do the following:
-    $action ${list.size} accounts. The 10 first are:
+    ${action.text} ${list.size} accounts. The 10 first are:
     
     ${list.take(10).reduce { a, b -> "$a\n    $b" }}
     
@@ -81,7 +81,9 @@ fun refreshView(state: UIState) {
                 .background(colorTwo)
                 .verticalScroll(rememberScrollState())
         ) {
-            Row {
+            Row(
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
 
                 if (action == ManagementAction.ADD_TO_LIST) {
                     val lists = state.selectedConfig?.second?.hostInterface?.getLists()
@@ -97,24 +99,24 @@ fun refreshView(state: UIState) {
                             }
                         }
                     }
-                }
 
-                Button(
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = {
-                        selectedDropdown.value = true
+                    Button(
+                        modifier = Modifier.padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                        onClick = {
+                            selectedDropdown.value = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Servers"
+                        )
+                        Text("Select list")
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Servers"
-                    )
-                    Text("Select list")
                 }
 
                 Button(
-                    enabled = action != ManagementAction.ADD_TO_LIST|| selectedList.value != null,
+                    enabled = action != ManagementAction.ADD_TO_LIST || selectedList.value != null,
                     modifier = Modifier.padding(4.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                     onClick = {
@@ -131,7 +133,7 @@ fun refreshView(state: UIState) {
                     if (action == null)
                         Text("Start importing following / followers list")
                     else
-                        Text("$action ${state.actionList.size} accounts")
+                        Text("${action.text} ${state.actionList.size} accounts")
                 }
             }
 

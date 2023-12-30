@@ -51,7 +51,9 @@ fun pasteView(state: UIState) {
             .background(colorTwo)
             .verticalScroll(rememberScrollState())
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
             CommonButton(text = "Copy accounts to clipboard") {
                 clipboardManager.setText(
                     AnnotatedString(state.getSelected())

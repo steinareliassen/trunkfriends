@@ -56,8 +56,14 @@ fun addRemoveView(state: UIState) {
             .background(colorTwo)
             .verticalScroll(rememberScrollState())
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            CommonButton(text = "Insert from bag") {
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+        ) {
+            CommonButton(
+                enabled = state.historyViewState.pasteBag.isNotEmpty(),
+                text = "Insert from bag"
+            ) {
                 text.value = state.historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
             }
             val managementCommand = { context : ManagementAction ->
@@ -65,13 +71,23 @@ fun addRemoveView(state: UIState) {
                 state.context = context
                 state.actionList = text.value.split("\n")
             }
-            CommonButton(text = "Unfollow selected") {
+
+            CommonButton(
+                enabled = text.value.isNotBlank(),
+                text = "Unfollow selected"
+            ) {
                 managementCommand(ManagementAction.UNFOLLOW)
             }
-            CommonButton(text = "Follow selected") {
+            CommonButton(
+                enabled = text.value.isNotBlank(),
+                text = "Follow selected"
+            ) {
                 managementCommand(ManagementAction.FOLLOW)
             }
-            CommonButton(text = "Add to list") {
+            CommonButton(
+                enabled = text.value.isNotBlank(),
+                text = "Add to list"
+            ) {
                 managementCommand(ManagementAction.ADD_TO_LIST)
             }
 
