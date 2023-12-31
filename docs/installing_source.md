@@ -2,7 +2,7 @@
 
 - Install Java, version 17 or newer.
 
-- clone repository
+- download a zip file with the source code, or use git to clone repository
 
 - build and run application with "gradlew run"
 
