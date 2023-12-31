@@ -12,11 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.CurrentUser
 import org.osprey.trunkfriends.historyhandler.HistoryHandler
 import org.osprey.trunkfriends.ui.history.followCard
+import java.util.*
+import kotlin.Comparator
 
 enum class SortStyle(val text : String) {
     FOLLOW_STATUS("Following/follower"),
@@ -144,7 +147,8 @@ server with requests. Once followers are imported, you will be see them here.
         }
 
         HistoryHandler().createListCards(list).filter {
-            searchText.value == null || it.acct.contains(searchText.value ?: "")
+            searchText.value == null || it.acct.lowercase(Locale.getDefault())
+                .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
         }.takeIf { it.isNotEmpty() }.let {
             if (it != null) {
                 it.chunked(14).apply {
