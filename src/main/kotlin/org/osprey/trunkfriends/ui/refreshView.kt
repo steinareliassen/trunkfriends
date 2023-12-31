@@ -27,14 +27,15 @@ val bannerRefresh =
 fun executeManagement(list: List<String>, action: ManagementAction) =
     """
     You are about to do the following:
-    ${action.text} ${list.size} accounts. The 10 first are:
+    ${action.text} ${list.size} accounts. ${if (list.size > 10) "The 10 first are:" else ""}
     
     ${list.take(10).reduce { a, b -> "$a\n    $b" }}
     
     There is a delay between each address in order to not spam the server. Please note, that while you can
     cancel the action at any time, the addresses that has had the action applied to them will not be rolled 
     back. If you have 20 followers you want to unfollow, and cancel after 5, you will still have 
-    unfollowed 5 followers.
+    unfollowed 5 followers. Followed/Unfollowed accounts are not immediately shown in history / list view,
+    you must refresh followers first.
                             """
 
 @Composable

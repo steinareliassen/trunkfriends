@@ -69,7 +69,7 @@ fun addRemoveView(state: UIState) {
             val managementCommand = { context : ManagementAction ->
                 state.view = View.EXECUTE_MANAGEMENT
                 state.context = context
-                state.actionList = text.value.split("\n")
+                state.actionList = text.value.split("\n").filter { it.isNotBlank() }.map { it.trim() }
             }
 
             CommonButton(
