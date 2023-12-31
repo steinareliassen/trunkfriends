@@ -23,6 +23,7 @@ class MastodonAuthApi {
             ).body(),
             UserClass::class.java
         )
+
     fun obtainToken(domain: String,
                     clientId: String,
                     clientSecret: String,
@@ -42,7 +43,7 @@ class MastodonAuthApi {
                                     "redirect_uri" to "urn:ietf:wg:oauth:2.0:oob",
                                     "grant_type" to "authorization_code",
                                     "code" to code,
-                                    "scope" to "read"
+                                    "scope" to "read write follow"
                                 )
                             )
                         )
@@ -67,7 +68,7 @@ class MastodonAuthApi {
                                 mapOf(
                                     "client_name" to "Trunkfriends",
                                     "redirect_uris" to "urn:ietf:wg:oauth:2.0:oob",
-                                    "scopes" to "read",
+                                    "scopes" to "read write follow",
                                     "website" to "https://github.com/steinareliassen/trunkfriends"
                                 )
                             )

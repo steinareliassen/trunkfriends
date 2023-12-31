@@ -8,14 +8,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.historyhandler.refresh
+import org.osprey.trunkfriends.managementhandler.managementAction
 import org.osprey.trunkfriends.ui.history.HistoryViewState
 
 class UIState(var configMap: MutableList<Pair<String, Config>>) {
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
-    var dropDownState by mutableStateOf(false)
+    var selectServerDropDownState by mutableStateOf(false)
+    var menuDrownDownState by mutableStateOf(false)
+
     var feedback by mutableStateOf("Refreshing")
     var zoomedName by mutableStateOf<String?>(null)
-    var view by mutableStateOf("About")
+
+    var view by mutableStateOf(View.ABOUT)
+    var context by mutableStateOf<ManagementAction?>(null)
+    var actionList = listOf<String>()
     var activeButtons by mutableStateOf(true)
     private var coroutineScope = CoroutineScope(Dispatchers.Main)
 
@@ -36,17 +42,47 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             }
             refreshActive = false
             activeButtons = true
-            view = "History"
+            view = View.HISTORY
             historyViewState.reset()
         }
     }
 
-    fun onServerSelect(selectView : String, setConfig : Pair<String, Config>?) {
-        dropDownState = false
+    fun startExecuteManagementAction(action: ManagementAction, accounts: List<String>, list: String? = null) {
+        if (refreshActive) return
+        refreshActive = true
+        coroutineScope.launch {
+            activeButtons = false
+            managementAction(
+                accounts,
+                action,
+                list,
+                selectedConfig ?: throw IllegalStateException("Should not be null"),
+                { !refreshActive }
+            ) { param ->
+                feedback = param
+            }
+            refreshActive = false
+            activeButtons = true
+            view = View.MANAGE
+            historyViewState.reset()
+        }
+    }
+    fun onServerSelect(selectView : View, setConfig : Pair<String, Config>?) {
+        selectServerDropDownState = false
         selectedConfig = setConfig
         historyViewState.reset()
         zoomedName = null
         view = selectView
+    }
+
+    val changeZoom = { name : String?, oldView : View ->
+        zoomedName = name
+        if (zoomedName != null) {
+            historyViewState.returnView = oldView
+            view = View.HISTORY
+        } else {
+            view = historyViewState.returnView
+        }
     }
 
     fun clearSelect() {

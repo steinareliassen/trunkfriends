@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.Window
@@ -31,16 +32,24 @@ fun App(state: UIState) {
 
     // Todo: startpoint for scalable UI
     /*val configuration = LocalConfiguration.current
-
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
-        if (state.view == "Add server") {
+        if (state.view == View.ADD_SERVER || state.view == View.NEW_TOKEN) {
             // Authenticate view, without header
-            authenticateView(remember { AuthState() }, state)
-        }
-        else if (state.zoomedName != null) {
+            authenticateView(
+                remember {
+                    AuthState(
+                        if (state.view == View.NEW_TOKEN)
+                            state.selectedConfig?.second?.server
+                        else
+                            null
+                    )
+                },
+                state
+            )
+        } else if (state.zoomedName != null) {
             // Zoomed history view, with clear search button
             Row(modifier = Modifier.fillMaxWidth()) {
                 CommonButton(
@@ -54,64 +63,102 @@ fun App(state: UIState) {
             ButtonRowHeader(state)
         }
 
-        if (state.view == "History")
+        if (state.view == View.HISTORY) {
+            state.historyViewState.page = 0
+            state.historyViewState.time = 0
             historyListing(
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
                 state.zoomedName,
-                onNameChange = { state.zoomedName = it }
+                state.changeZoom
             )
-        if (state.view == "About") aboutView()
-        if (state.view == "Refresh") {
+        }
+        if (state.view == View.LIST) {
+            state.historyViewState.page = 0
+            state.historyViewState.time = 0
+            overviewListing(
+                state.historyViewState,
+                state.selectedConfig?.first ?: "No Server",
+                state.changeZoom
+            )
+        }
+        if (state.view == View.MANAGE) {
+            addRemoveView(state)
+        }
+        if (state.view == View.ABOUT) aboutView()
+        if (state.view == View.REFRESH ||
+            state.view == View.EXECUTE_MANAGEMENT
+        ) {
+            // Make sure we come with a blank context if we dont use management actions
+            if (state.view == View.REFRESH) state.context = null
             refreshView(state)
         }
-        if (state.view == "Pastebag") {
+        if (state.view == View.PASTE_BAG) {
             pasteView(state)
         }
     }
 }
 
 @Composable
-fun ButtonRowHeader(state : UIState) {
+fun ButtonRowHeader(state: UIState) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        CommonButton(enabled = state.activeButtons, text = "About") {
-            state.view = "About"
+
+        Button(
+            enabled = state.activeButtons,
+            modifier = Modifier.padding(4.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+            onClick = { state.menuDrownDownState = true }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Menu"
+            )
+            Text("Menu")
         }
 
-        if (state.selectedConfig != null) {
-            CommonButton(enabled = state.activeButtons, text = "History Overview") {
-                state.view = "History"
+        val dropDownItems = listOf(
+            Triple("About", View.ABOUT, false),
+            Triple("Follower Overview", View.LIST, true),
+            Triple("History Overview", View.HISTORY, true),
+            Triple("Refresh followers", View.REFRESH, true),
+            Triple("Manage followers", View.MANAGE, true),
+            Triple("Obtain new token", View.NEW_TOKEN, true),
+            )
+        DropdownMenu(
+            expanded = state.menuDrownDownState,
+            onDismissRequest = { state.menuDrownDownState = false }
+        ) {
+            dropDownItems.forEach {
+                if (((it.third && state.selectedConfig != null) || !it.third)) {
+                    CommonDropDownItem(text = it.first) {
+                        state.menuDrownDownState = false
+                        state.view = it.second
+                    }
+                }
             }
-            CommonButton(enabled = state.activeButtons, text = "Refresh followers") {
-                state.view = "Refresh"
-            }
-            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
-                state.view = "Pastebag"
-            }
-
         }
 
         Button(
             enabled = state.activeButtons,
             modifier = Modifier.padding(4.dp),
             colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-            onClick = { state.dropDownState = true }
+            onClick = { state.selectServerDropDownState = true }
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Servers"
             )
-            Text("select server")
+            Text("Select server")
         }
 
         DropdownMenu(
-            expanded = state.dropDownState,
-            onDismissRequest = { state.dropDownState = false }
+            expanded = state.selectServerDropDownState,
+            onDismissRequest = { state.selectServerDropDownState = false }
         ) {
             state.configMap.forEach { configPair ->
                 DropdownMenuItem(
                     onClick = {
-                        state.onServerSelect("History", configPair)
+                        state.onServerSelect(View.HISTORY, configPair)
                     }
                 ) {
                     Text(configPair.first)
@@ -119,10 +166,16 @@ fun ButtonRowHeader(state : UIState) {
             }
             DropdownMenuItem(
                 onClick = {
-                    state.onServerSelect("Add server", null)
+                    state.onServerSelect(View.ADD_SERVER, null)
                 }
             ) {
                 Text("Add new server")
+            }
+        }
+
+        if (state.selectedConfig != null) {
+            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
+                state.view = View.PASTE_BAG
             }
         }
 
@@ -134,6 +187,7 @@ fun ButtonRowHeader(state : UIState) {
     )
 
 }
+
 fun main() = application {
 
     val rootPath = FileUtils.getUserDirectoryPath() + "/.trunkfriends"

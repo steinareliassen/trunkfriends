@@ -39,7 +39,7 @@ On the location where you want the folder containing trunkfriends to be.
 ### Installing and running Trunkfriends from zip file
 
 If you do not have git, downloading the source as a zip file is
-a goo option.
+a good option.
 
 https://github.com/steinareliassen/trunkfriends/archive/refs/heads/main.zip
 

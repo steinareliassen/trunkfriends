@@ -1,15 +1,13 @@
 package org.osprey.trunkfriends.historyhandler
 
 import kotlinx.coroutines.delay
-import org.osprey.trunkfriends.api.mastodon.MastodonApi
 import org.osprey.trunkfriends.config.Config
 
 suspend fun refresh(selectedConfig : Pair<String, Config>, isCancelled : () -> Boolean,feedbackFunction: (String) -> Unit) {
     // Set up fetchers
     try {
-        val currentUserFetcher = MastodonApi(
-            selectedConfig.second
-        )
+        val hostInterface = selectedConfig.second.hostInterface
+
         val historyHandler = HistoryHandler()
 
         // Find user status from previous run
@@ -18,14 +16,14 @@ suspend fun refresh(selectedConfig : Pair<String, Config>, isCancelled : () -> B
         val latestHistory =
             historyHandler.extractPreviousRunFromHistory(history) // Find latest status of each user from history
 
-        val userId = currentUserFetcher.getUserId()
+        val userId = hostInterface.getUserId()
 
-        val following = currentUserFetcher.getFollow(userId, "following", isCancelled ,feedbackFunction)
-        val followers = currentUserFetcher.getFollow(userId, "followers", isCancelled, feedbackFunction)
+        val following = hostInterface.getFollow(userId, "following", isCancelled ,feedbackFunction)
+        val followers = hostInterface.getFollow(userId, "followers", isCancelled, feedbackFunction)
 
         // Get current users
         val currentUsers =
-            currentUserFetcher.getCurrentUsers(following, followers) // Get the current status of each user
+            hostInterface.getCurrentUsers(following, followers) // Get the current status of each user
 
         // Create and write new history
         val newHistory = historyHandler.createNewHistory(
