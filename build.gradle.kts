@@ -29,7 +29,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Trunkfriends"
-            packageVersion = "0.3.0"
+            packageVersion = "0.4.0"
             windows {
                 menuGroup = "Trunkfriends"
                 upgradeUuid = "cc9631f7-88bf-4520-86f8-242f0615caf7"
@@ -40,6 +40,9 @@ compose.desktop {
                 iconFile.set(project.file("icon.png"))
                 debMaintainer = "steinar.eliassen@gmail.com"
                 appRelease = "1"
+            }
+            macOS {
+                iconFile.set(project.file("icon.png"))
             }
         }
     }

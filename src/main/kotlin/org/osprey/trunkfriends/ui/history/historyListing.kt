@@ -71,92 +71,96 @@ fun historyListing(
 You do not seem to have imported the followers / following list from the mastodon 
 instance. Click on "Refresh followers" and start importing. If you have a large
 amount of followers, this can take some time, as we do not want to swamp the
-server with requests. Once followers are imported, you will be see them here.
+server with requests. Once followers are imported, you will see them here.
             """.trimIndent(), 16f
             )
-            return
-        }
-        val timeslots = history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.distinct()
+        } else {
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            if (history.isNotEmpty() && zoomedName == null) {
-                CommonIconButton(text = timestampToDateString(historyState.time), icon = Icons.Default.MoreVert) {
-                    historyState.historyDropdownState = true
-                }
-                if (historyState.timeslotPage > 0)
-                    CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
-                        historyState.time = timeslots[historyState.previousTimeslot()]
-                    }
-                CommonButton(enabled = false, text = "${historyState.timeslotPage + 1}/${timeslots.size}") {}
-                if (historyState.timeslotPage < timeslots.size - 1)
-                    CommonIconButton(text = "Next timeslot", icon = Icons.Default.ArrowForward, iconBefore = false) {
-                        historyState.time = timeslots[historyState.nextTimeslot()]
-                    }
-            }
-        }
+            val timeslots = history.map { (_, control) ->
+                control.substring(0, control.length - 3).toLong()
+            }.distinct()
 
-        DropdownMenu(
-            expanded = historyState.historyDropdownState,
-            onDismissRequest = { historyState.historyDropdownState = false }
-        ) {
-
-            timeslots.forEachIndexed { i, time ->
-                DropdownMenuItem(
-                    onClick = {
-                        historyState.time = time
-                        historyState.timeslotPage = i
-                        historyState.page = 0
-                        historyState.historyDropdownState = false
+            Row(modifier = Modifier.fillMaxWidth()) {
+                if (history.isNotEmpty() && zoomedName == null) {
+                    CommonIconButton(text = timestampToDateString(historyState.time), icon = Icons.Default.MoreVert) {
+                        historyState.historyDropdownState = true
                     }
-                ) {
-                    Text(timestampToDateString(time))
+                    if (historyState.timeslotPage > 0)
+                        CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
+                            historyState.time = timeslots[historyState.previousTimeslot()]
+                        }
+                    CommonButton(enabled = false, text = "${historyState.timeslotPage + 1}/${timeslots.size}") {}
+                    if (historyState.timeslotPage < timeslots.size - 1)
+                        CommonIconButton(
+                            text = "Next timeslot",
+                            icon = Icons.Default.ArrowForward,
+                            iconBefore = false
+                        ) {
+                            historyState.time = timeslots[historyState.nextTimeslot()]
+                        }
                 }
             }
-        }
 
-        HistoryHandler().createHistoryCards(history).filter {
-            ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
-        }.chunked(if (zoomedName == null) 14 else 8).apply {
-            Card(
-                elevation = Dp(2F),
-                modifier = Modifier
-                    .width(740.dp)
-                    .wrapContentHeight()
-                    .padding(2.dp)
-                    .align(Alignment.CenterHorizontally)
+            DropdownMenu(
+                expanded = historyState.historyDropdownState,
+                onDismissRequest = { historyState.historyDropdownState = false }
             ) {
-                Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                    drop(historyState.page).first().forEach { historyCard ->
-                        Row(modifier = Modifier.align(Alignment.Start)) {
-                            if (zoomedName != null) {
-                                Column {
-                                    Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                    followCard(historyCard, historyState, View.HISTORY)
-                                }
-                            } else {
-                                followCard(historyCard, historyState, View.HISTORY) { name, view ->
-                                    onNameChange(name, view)
-                                    historyState.storeHistoryPage()
+
+                timeslots.forEachIndexed { i, time ->
+                    DropdownMenuItem(
+                        onClick = {
+                            historyState.time = time
+                            historyState.timeslotPage = i
+                            historyState.page = 0
+                            historyState.historyDropdownState = false
+                        }
+                    ) {
+                        Text(timestampToDateString(time))
+                    }
+                }
+            }
+
+            HistoryHandler().createHistoryCards(history).filter {
+                ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
+            }.chunked(if (zoomedName == null) 14 else 8).apply {
+                Card(
+                    elevation = Dp(2F),
+                    modifier = Modifier
+                        .width(740.dp)
+                        .wrapContentHeight()
+                        .padding(2.dp)
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                        drop(historyState.page).first().forEach { historyCard ->
+                            Row(modifier = Modifier.align(Alignment.Start)) {
+                                if (zoomedName != null) {
+                                    Column {
+                                        Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
+                                        followCard(historyCard, historyState, View.HISTORY)
+                                    }
+                                } else {
+                                    followCard(historyCard, historyState, View.HISTORY) { name, view ->
+                                        onNameChange(name, view)
+                                        historyState.storeHistoryPage()
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                    historyState.page--
-                }
-                CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                    historyState.page++
+                Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    if (historyState.page > 0) CommonButton(text = "<< prev page") {
+                        historyState.page--
+                    }
+                    CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
+                    if (historyState.page < size - 1) CommonButton(text = "next page >>") {
+                        historyState.page++
+                    }
                 }
             }
         }
-
     }
 }
 

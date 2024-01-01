@@ -12,7 +12,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.CurrentUser
@@ -21,7 +20,7 @@ import org.osprey.trunkfriends.ui.history.followCard
 import java.util.*
 import kotlin.Comparator
 
-enum class SortStyle(val text : String) {
+enum class SortStyle(val text: String) {
     FOLLOW_STATUS("Following/follower"),
     SERVER("Server name"),
     ACCOUNT("Account")
@@ -88,102 +87,102 @@ fun overviewListing(
             Text("\n")
             BannerRow(
                 """
-You do not seem to have imported the followers / following list from the mastodon 
+You do not seem to have imported the followers / following list from the mastodon
 instance. Click on "Refresh followers" and start importing. If you have a large
 amount of followers, this can take some time, as we do not want to swamp the
-server with requests. Once followers are imported, you will be see them here.
+server with requests. Once followers are imported, you will see them here.
             """.trimIndent(), 16f
             )
-            return
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            TextField(
-                singleLine = true,
-                modifier = Modifier.width(500.dp),
-                enabled = searchText.value == null,
-                value = historyState.searchText,
-                onValueChange = {
-                    historyState.searchText = it
-                                },
-                label = { Text("Text to search for") }
-            )
-            CommonButton(
-                enabled = historyState.searchText.isNotBlank(),
-                text = if (searchText.value == null) "Search" else "Clear"
-            ) {
-                historyState.page = 0
-                if (searchText.value != null) {
-                    searchText.value = null
-                    historyState.searchText = ""
-                }
-                else searchText.value = historyState.searchText
-            }
-            Box {
-                Button(
-                    enabled = true,
-                    modifier = Modifier.padding(4.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                    onClick = { sortDropDown.value = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Sort"
-                    )
-                    Text("Sort")
-                }
+        } else {
 
-                DropdownMenu(
-                    expanded = sortDropDown.value,
-                    onDismissRequest = { sortDropDown.value = false }
+            Row(modifier = Modifier.fillMaxWidth()) {
+                TextField(
+                    singleLine = true,
+                    modifier = Modifier.width(500.dp),
+                    enabled = searchText.value == null,
+                    value = historyState.searchText,
+                    onValueChange = {
+                        historyState.searchText = it
+                    },
+                    label = { Text("Text to search for") }
+                )
+                CommonButton(
+                    enabled = historyState.searchText.isNotBlank(),
+                    text = if (searchText.value == null) "Search" else "Clear"
                 ) {
-                    SortStyle.values().forEach {
-                        CommonDropDownItem(text = it.text) {
-                            sortState.value = SortStyle.valueOf(it.name)
-                            sortDropDown.value = false
+                    historyState.page = 0
+                    if (searchText.value != null) {
+                        searchText.value = null
+                        historyState.searchText = ""
+                    } else searchText.value = historyState.searchText
+                }
+                Box {
+                    Button(
+                        enabled = true,
+                        modifier = Modifier.padding(4.dp),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                        onClick = { sortDropDown.value = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Sort"
+                        )
+                        Text("Sort")
+                    }
+
+                    DropdownMenu(
+                        expanded = sortDropDown.value,
+                        onDismissRequest = { sortDropDown.value = false }
+                    ) {
+                        SortStyle.values().forEach {
+                            CommonDropDownItem(text = it.text) {
+                                sortState.value = SortStyle.valueOf(it.name)
+                                sortDropDown.value = false
+                            }
                         }
                     }
                 }
             }
-        }
 
-        HistoryHandler().createListCards(list).filter {
-            searchText.value == null || it.acct.lowercase(Locale.getDefault())
-                .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
-        }.takeIf { it.isNotEmpty() }.let {
-            if (it != null) {
-                it.chunked(14).apply {
-                    Card(
-                        elevation = Dp(2F),
-                        modifier = Modifier
-                            .width(740.dp)
-                            .wrapContentHeight()
-                            .padding(2.dp)
-                            .align(Alignment.CenterHorizontally)
-                    ) {
-                        Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                            drop(historyState.page).first().forEach { historyCard ->
-                                Row(modifier = Modifier.align(Alignment.Start)) {
-                                    followCard(historyCard, historyState, View.LIST) { name, view ->
-                                        onNameChange(name, view)
-                                        historyState.storeHistoryPage()
+            HistoryHandler().createListCards(list).filter {
+                searchText.value == null || it.acct.lowercase(Locale.getDefault())
+                    .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
+            }.takeIf { it.isNotEmpty() }.let {
+                if (it != null) {
+                    it.chunked(14).apply {
+                        Card(
+                            elevation = Dp(2F),
+                            modifier = Modifier
+                                .width(740.dp)
+                                .wrapContentHeight()
+                                .padding(2.dp)
+                                .align(Alignment.CenterHorizontally)
+                        ) {
+                            Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                                drop(historyState.page).first().forEach { historyCard ->
+                                    Row(modifier = Modifier.align(Alignment.Start)) {
+                                        followCard(historyCard, historyState, View.LIST) { name, view ->
+                                            onNameChange(name, view)
+                                            historyState.storeHistoryPage()
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                            historyState.page--
-                        }
-                        CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                        if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                            historyState.page++
+                        Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            if (historyState.page > 0) CommonButton(text = "<< prev page") {
+                                historyState.page--
+                            }
+                            CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
+                            if (historyState.page < size - 1) CommonButton(text = "next page >>") {
+                                historyState.page++
+                            }
                         }
                     }
+                } else {
+                    BannerRow("Search returned no results")
                 }
-            } else {
-                BannerRow("Search returned no results")
             }
         }
     }
