@@ -29,7 +29,7 @@ fun aboutView() {
   This software is public domain, no copyrights reserved, no warranty given.
 
   https://github.com/steinareliassen/trunkfriends
-        """,18f)
+        """,16f)
 
     }
 }

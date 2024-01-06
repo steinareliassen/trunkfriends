@@ -28,14 +28,18 @@ fun authenticateView(state: AuthState, uiState: UIState) {
     val api = MastodonAuthApi()
 
     fun registerClient() {
-        val client = api.registerClient(state.domain)
-        state.clientId = client.clientId
-        state.clientSecret = client.clientSecret
-        state.url = "https://${state.domain}/oauth/authorize?client_id=${client.clientId}" +
-                "&scope=read%20write%20follow" +
-                "&redirect_uri=urn:ietf:wg:oauth:2.0:oob" +
-                "&response_type=code"
-        state.activeStep = "step2"
+        runCatching {
+            val client = api.registerClient(state.domain)
+            state.clientId = client.clientId
+            state.clientSecret = client.clientSecret
+            state.url = "https://${state.domain}/oauth/authorize?client_id=${client.clientId}" +
+                    "&scope=read%20write%20follow" +
+                    "&redirect_uri=urn:ietf:wg:oauth:2.0:oob" +
+                    "&response_type=code"
+            state.activeStep = "step2"
+        }.onFailure {
+            state.activeStep = "failed"
+        }
     }
 
     Column {
@@ -48,15 +52,16 @@ fun authenticateView(state: AuthState, uiState: UIState) {
             registerClient()
         }
 
-        if (state.activeStep == "") {
+        if (state.activeStep == "failed") {
             BannerRow(
                 """
-First thing, you need to enter the domain name of the server you want to connect to.
-If your username is @user@mastodon.social, the domain name is mastodon.social
-Press "ACTIVATE" after you enter the domain name.
+Something went wrong, maybe you entered a non-existing domain name?
                 """.trimIndent(),
                 16f
             )
+
+        }
+        if (state.activeStep == "") {
             Text("\n")
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
@@ -67,7 +72,9 @@ Press "ACTIVATE" after you enter the domain name.
                     onValueChange = { state.domain = it },
                     label = { Text("The domain you want to register") }
                 )
-                CommonButton(text = "Activate") {
+                CommonButton(
+                    text = "Activate",
+                    enabled = state.domain.length > 3) {
                     registerClient()
                 }
 
@@ -203,7 +210,10 @@ on this account.
 
         Row(modifier = Modifier.fillMaxWidth()) {
             CommonButton(text = "Cancel server registration") {
-                uiState.view = View.HISTORY
+                uiState.view = if (uiState.selectedConfig!= null)
+                    View.HISTORY
+                else
+                    View.ABOUT
             }
         }
     }
