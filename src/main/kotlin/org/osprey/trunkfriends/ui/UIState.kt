@@ -12,6 +12,8 @@ import org.osprey.trunkfriends.managementhandler.managementAction
 import org.osprey.trunkfriends.ui.history.HistoryViewState
 
 class UIState(var configMap: MutableList<Pair<String, Config>>) {
+    var height  by mutableStateOf(800)
+
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
     var selectServerDropDownState by mutableStateOf(false)
     var menuDrownDownState by mutableStateOf(false)

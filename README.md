@@ -13,6 +13,41 @@ directory. As this software is very much in an alpha state and can potentially
 contain bugs, it is recommended you backup this folder from time to time, 
 in case anything  should happen.
 
+## Documentation
+
+Everything about using Trunkfriends, installing from install packages, etc
+has been moved to:
+
+This readme will remain for developers
+
+## Building and running
+
+You need JDKv17 or newer to run. There are really no other requirements.
+
+Project is easily built and run with gradle, either installed or using
+the gradle wrapper. On the root folder, type:
+
+On *nix:
+_sh gradlew run_
+
+On Windows:
+_gradlew.bat run_
+
+## Building distribution packages
+
+These are gradle options used for packaging distributions:
+
+"fat" JAR with all dependencies for current OS (so far only release method for OSX)
+
+packageUberJarForCurrentOS 
+
+MSI / Deb 
+
+packageDeb
+packageMsi
+
+## MOVE THE REST TO HTML DOC AND DELETE:
+
 ## What is TrunkFriends
 
 I started writing TrunkFriends as a result of suddenly being disconnected 

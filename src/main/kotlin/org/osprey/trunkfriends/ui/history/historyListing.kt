@@ -29,8 +29,11 @@ fun historyListing(
     historyState: HistoryViewState,
     serverUser: String,
     zoomedName: String?,
-    onNameChange: (String?, View) -> Unit
+    onNameChange: (String?, View) -> Unit,
 ) {
+    fun rows() =
+        (historyState.height - 200) / 27
+
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
             .withLocale(Locale.GERMAN)
@@ -122,7 +125,7 @@ server with requests. Once followers are imported, you will see them here.
 
             HistoryHandler().createHistoryCards(history).filter {
                 ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
-            }.chunked(if (zoomedName == null) 14 else 8).apply {
+            }.chunked(if (zoomedName == null) rows() else rows()/2).apply {
                 Card(
                     elevation = Dp(2F),
                     modifier = Modifier

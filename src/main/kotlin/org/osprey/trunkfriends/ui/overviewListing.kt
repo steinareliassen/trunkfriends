@@ -69,6 +69,9 @@ fun overviewListing(
     serverUser: String,
     onNameChange: (String?, View) -> Unit
 ) {
+    fun rows() =
+        (historyState.height - 200) / 27
+
     val sortDropDown = remember { mutableStateOf(false) }
     val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
     val searchText = remember { mutableStateOf<String?>(null) }
@@ -149,7 +152,7 @@ server with requests. Once followers are imported, you will see them here.
                     .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
                 if (it != null) {
-                    it.chunked(14).apply {
+                    it.chunked(rows()).apply {
                         Card(
                             elevation = Dp(2F),
                             modifier = Modifier

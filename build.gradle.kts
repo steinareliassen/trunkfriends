@@ -14,6 +14,8 @@ repositories {
     google()
 }
 
+// https://medium.com/@stefanoq21/window-size-in-jetpack-compose-696651580b55
+// https://developer.android.com/jetpack/androidx/releases/compose-material3#kts
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")

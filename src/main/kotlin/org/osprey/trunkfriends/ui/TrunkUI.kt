@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -22,20 +23,20 @@ import org.osprey.trunkfriends.ui.authenticate.authenticateView
 import org.osprey.trunkfriends.ui.history.historyListing
 import org.osprey.trunkfriends.ui.history.pasteView
 import org.osprey.trunkfriends.util.mapper
+import java.awt.Dimension
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
 @Composable
 @Preview
-fun App(state: UIState) {
-
+fun App(state: UIState, window: ComposeWindow) {
     // Todo: startpoint for scalable UI
+    // state.height = window.size.height
     /*val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
-
         if (state.view == View.ADD_SERVER || state.view == View.NEW_TOKEN) {
             // Authenticate view, without header
             authenticateView(
@@ -66,11 +67,12 @@ fun App(state: UIState) {
         if (state.view == View.HISTORY) {
             state.historyViewState.page = 0
             state.historyViewState.time = 0
+            state.historyViewState.height = state.height
             historyListing(
                 state.historyViewState,
                 state.selectedConfig?.first ?: "No Server",
                 state.zoomedName,
-                state.changeZoom
+                state.changeZoom,
             )
         }
         if (state.view == View.LIST) {
@@ -189,7 +191,6 @@ fun ButtonRowHeader(state: UIState) {
 }
 
 fun main() = application {
-
     val rootPath = FileUtils.getUserDirectoryPath() + "/.trunkfriends"
     val path = Paths.get(rootPath)
     if (!Files.exists(path)) {
@@ -222,8 +223,9 @@ fun main() = application {
     Window(
         icon = icon,
         onCloseRequest = ::exitApplication,
-        title = "Trunk Friends"
+        title = "Trunk Friends",
     ) {
-        App(remember { UIState(configMap) })
+        window.minimumSize = Dimension(1024, 800)
+        App(remember { UIState(configMap) }, window)
     }
 }

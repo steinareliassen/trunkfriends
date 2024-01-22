@@ -5,12 +5,14 @@ import org.osprey.trunkfriends.ui.View
 
 class HistoryViewState {
     var page by mutableStateOf(0)
+    var height by mutableStateOf(800)
     var searchText by mutableStateOf("")
     var timeslotPage by mutableStateOf(0)
     var historyDropdownState by mutableStateOf(false)
     var time by mutableStateOf(0L)
     val pasteBag = mutableStateListOf<String>()
     var returnView = View.HISTORY
+
     private var returnPage by mutableStateOf(0)
     private var returnTime by mutableStateOf(0L)
     private var returnTimeslot by mutableStateOf(0)
