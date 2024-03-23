@@ -8,13 +8,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.*
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.authenticate.AuthState
@@ -22,18 +26,15 @@ import org.osprey.trunkfriends.ui.authenticate.authenticateView
 import org.osprey.trunkfriends.ui.history.historyListing
 import org.osprey.trunkfriends.ui.history.pasteView
 import org.osprey.trunkfriends.util.mapper
+import java.awt.Dimension
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
 @Composable
 @Preview
-fun App(state: UIState) {
+fun App(state: UIState, wstate: WindowState) {
 
-    // Todo: startpoint for scalable UI
-    /*val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
-    val screenWidth = configuration.screenWidthDp.dp*/
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
         if (state.view == View.ADD_SERVER || state.view == View.NEW_TOKEN) {
@@ -60,7 +61,7 @@ fun App(state: UIState) {
             }
         } else {
             // Regular header, with button row
-            ButtonRowHeader(state)
+            ButtonRowHeader(state, wstate)
         }
 
         if (state.view == View.HISTORY) {
@@ -100,7 +101,7 @@ fun App(state: UIState) {
 }
 
 @Composable
-fun ButtonRowHeader(state: UIState) {
+fun ButtonRowHeader(state: UIState, wstate: WindowState) {
     Row(modifier = Modifier.fillMaxWidth()) {
 
         Button(
@@ -142,7 +143,10 @@ fun ButtonRowHeader(state: UIState) {
             enabled = state.activeButtons,
             modifier = Modifier.padding(4.dp),
             colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-            onClick = { state.selectServerDropDownState = true }
+            onClick = {
+                state.selectServerDropDownState = true
+                wstate.size = wstate.size.copy( width = wstate.size.width + 300.dp)
+            }
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
@@ -218,12 +222,30 @@ fun main() = application {
         }
     } as MutableList<Pair<String, Config>>
 
+    val state = rememberWindowState(width = 800.dp, height = 750.dp)
     val icon = painterResource("icon.png")
     Window(
         icon = icon,
         onCloseRequest = ::exitApplication,
-        title = "Trunk Friends"
+        title = "Trunk Friends",
+        state = state,
     ) {
-        App(remember { UIState(configMap) })
+        LaunchedEffect(state) {
+            snapshotFlow { state.size }
+                .onEach {
+                    onWindowResize(it, state)
+                }
+                .launchIn(this)
+        }
+        window.minimumSize = Dimension(800, 600)
+        App(remember { UIState(configMap) }, state)
     }
+}
+
+// https://github.com/JetBrains/compose-multiplatform/tree/master/tutorials/Window_API_new
+private fun onWindowResize(size: DpSize, state: WindowState) {
+    println("onWindowResize $size")
+    //if (state.size.width < 800.dp) state.size = state.size.copy( width = 800.dp)
+    //if (state.size.height < 600.dp) state.size = state.size.copy( height = 600.dp)
+
 }
