@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends.historyhandler
+package org.osprey.trunkfriends.dal
 
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.api.CurrentUser
@@ -122,7 +122,7 @@ class HistoryHandler {
         return newHistoryLines
     }
 
-    fun extractPreviousRunFromHistory(history: List<Pair<CurrentUser, String>>): Map<String, CurrentUser> =
+    fun extractPreviousRun(history: List<Pair<CurrentUser, String>>): Map<String, CurrentUser> =
         history.associate {
             it.first.acct to it.first
         }

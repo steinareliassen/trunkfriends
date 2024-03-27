@@ -3,7 +3,6 @@ package org.osprey.trunkfriends.api
 import org.osprey.trunkfriends.config.Config
 
 abstract class GenericHostInterface(protected val config: Config) {
-    abstract fun getCurrentUsers(following : List<UserClass>, followers : List<UserClass>) : Map<String, CurrentUser>
 
     abstract fun getUserId() : String
 
@@ -17,9 +16,9 @@ abstract class GenericHostInterface(protected val config: Config) {
 
     abstract suspend fun getFollow(
         userId: String,
-        direction: String,
+        direction: Direction,
         isCancelled : () -> Boolean,
-        funk: (String) -> Unit
+        feedbackFunction: (String) -> Unit
     ) : List<UserClass>
 
 }

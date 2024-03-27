@@ -87,32 +87,36 @@ fun refreshView(state: UIState) {
             ) {
 
                 if (action == ManagementAction.ADD_TO_LIST) {
-                    val lists = state.selectedConfig?.second?.hostInterface?.getLists()
-                        ?: throw IllegalStateException("Should not happen")
-                    DropdownMenu(
-                        expanded = selectedDropdown.value,
-                        onDismissRequest = { selectedDropdown.value = false }
-                    ) {
-                        lists.forEach { list ->
-                            CommonDropDownItem(text = list.title) {
-                                selectedDropdown.value = false
-                                selectedList.value = list.title
+                    runCatching {
+                        val lists = state.selectedConfig?.second?.hostInterface?.getLists()
+                            ?: throw IllegalStateException("Should not happen")
+                        DropdownMenu(
+                            expanded = selectedDropdown.value,
+                            onDismissRequest = { selectedDropdown.value = false }
+                        ) {
+                            lists.forEach { list ->
+                                CommonDropDownItem(text = list.title) {
+                                    selectedDropdown.value = false
+                                    selectedList.value = list.title
+                                }
                             }
                         }
-                    }
 
-                    Button(
-                        modifier = Modifier.padding(4.dp),
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                        onClick = {
-                            selectedDropdown.value = true
+                        Button(
+                            modifier = Modifier.padding(4.dp),
+                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                            onClick = {
+                                selectedDropdown.value = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Servers"
+                            )
+                            Text("Select list")
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Servers"
-                        )
-                        Text("Select list")
+                    }.onFailure {
+                        Text("Error fetching lists")
                     }
                 }
 

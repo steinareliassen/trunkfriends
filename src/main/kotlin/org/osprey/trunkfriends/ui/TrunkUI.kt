@@ -37,9 +37,29 @@ fun App(state: UIState, wstate: WindowState) {
 
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
-        if (state.view == View.ADD_SERVER || state.view == View.NEW_TOKEN) {
-            // Authenticate view, without header
-            authenticateView(
+        ButtonRowHeader(state)
+
+        when (state.view) {
+            View.HISTORY -> historyListing(
+                state.historyViewState,
+                state,
+                state.zoomedName,
+                wstate.size.height.value.toInt()
+            )
+            View.LIST -> overviewListing(
+                state.historyViewState,
+                state,
+                wstate.size.height.value.toInt()
+            )
+            View.MANAGE -> addRemoveView(state)
+            View.ABOUT -> aboutView()
+            View.PASTE_BAG -> pasteView(state)
+            View.REFRESH -> {
+                if (state.view == View.REFRESH) state.context = null
+                refreshView(state)
+            }
+            View.EXECUTE_MANAGEMENT -> refreshView(state)
+            View.ADD_SERVER, View.NEW_TOKEN -> authenticateView(
                 remember {
                     AuthState(
                         if (state.view == View.NEW_TOKEN)
@@ -50,145 +70,106 @@ fun App(state: UIState, wstate: WindowState) {
                 },
                 state
             )
-        } else if (state.zoomedName != null) {
-            // Zoomed history view, with clear search button
-            Row(modifier = Modifier.fillMaxWidth()) {
-                CommonButton(
-                    text = "Clear search"
-                ) {
-                    state.zoomedName = null
-                }
-            }
-        } else {
-            // Regular header, with button row
-            ButtonRowHeader(state, wstate)
         }
 
-        if (state.view == View.HISTORY) {
-            state.historyViewState.page = 0
-            state.historyViewState.time = 0
-            historyListing(
-                state.historyViewState,
-                state.selectedConfig?.first ?: "No Server",
-                state.zoomedName,
-                state.changeZoom
-            )
-        }
-        if (state.view == View.LIST) {
-            state.historyViewState.page = 0
-            state.historyViewState.time = 0
-            overviewListing(
-                state.historyViewState,
-                state.selectedConfig?.first ?: "No Server",
-                state.changeZoom
-            )
-        }
-        if (state.view == View.MANAGE) {
-            addRemoveView(state)
-        }
-        if (state.view == View.ABOUT) aboutView()
-        if (state.view == View.REFRESH ||
-            state.view == View.EXECUTE_MANAGEMENT
-        ) {
-            // Make sure we come with a blank context if we dont use management actions
-            if (state.view == View.REFRESH) state.context = null
-            refreshView(state)
-        }
-        if (state.view == View.PASTE_BAG) {
-            pasteView(state)
-        }
     }
 }
 
 @Composable
-fun ButtonRowHeader(state: UIState, wstate: WindowState) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-
-        Button(
-            enabled = state.activeButtons,
-            modifier = Modifier.padding(4.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-            onClick = { state.menuDrownDownState = true }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Menu"
-            )
-            Text("Menu")
-        }
-
-        val dropDownItems = listOf(
-            Triple("About", View.ABOUT, false),
-            Triple("Follower Overview", View.LIST, true),
-            Triple("History Overview", View.HISTORY, true),
-            Triple("Refresh followers", View.REFRESH, true),
-            Triple("Manage followers", View.MANAGE, true),
-            Triple("Obtain new token", View.NEW_TOKEN, true),
-            )
-        DropdownMenu(
-            expanded = state.menuDrownDownState,
-            onDismissRequest = { state.menuDrownDownState = false }
-        ) {
-            dropDownItems.forEach {
-                if (((it.third && state.selectedConfig != null) || !it.third)) {
-                    CommonDropDownItem(text = it.first) {
-                        state.menuDrownDownState = false
-                        state.view = it.second
-                    }
-                }
-            }
-        }
-
-        Button(
-            enabled = state.activeButtons,
-            modifier = Modifier.padding(4.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-            onClick = {
-                state.selectServerDropDownState = true
-                wstate.size = wstate.size.copy( width = wstate.size.width + 300.dp)
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Servers"
-            )
-            Text("Select server")
-        }
-
-        DropdownMenu(
-            expanded = state.selectServerDropDownState,
-            onDismissRequest = { state.selectServerDropDownState = false }
-        ) {
-            state.configMap.forEach { configPair ->
-                DropdownMenuItem(
-                    onClick = {
-                        state.onServerSelect(View.HISTORY, configPair)
-                    }
-                ) {
-                    Text(configPair.first)
-                }
-            }
-            DropdownMenuItem(
-                onClick = {
-                    state.onServerSelect(View.ADD_SERVER, null)
-                }
+fun ButtonRowHeader(state: UIState) {
+    // Zoomed header
+    if (state.zoomedName != null) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            CommonButton(
+                text = "Clear search"
             ) {
-                Text("Add new server")
+                state.zoomedName = null
             }
         }
-
-        if (state.selectedConfig != null) {
-            CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
-                state.view = View.PASTE_BAG
-            }
-        }
-
+        return
     }
 
-    BannerRow(
-        "Selected server: " +
-                (state.selectedConfig?.first ?: "select server from dropdown")
-    )
+    if(state.view.header) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+
+            Button(
+                enabled = state.activeButtons,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = { state.menuDrownDownState = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menu"
+                )
+                Text("Menu")
+            }
+
+            DropdownMenu(
+                expanded = state.menuDrownDownState,
+                onDismissRequest = { state.menuDrownDownState = false }
+            ) {
+                listOf(
+                    View.ABOUT, View.LIST, View.HISTORY,
+                    View.REFRESH, View.MANAGE, View.NEW_TOKEN
+                ).forEach { view ->
+                    if (view == View.ABOUT || state.selectedConfig != null)  {
+                        CommonDropDownItem(text = view.title) {
+                            state.menuDrownDownState = false
+                            state.changeView(view)
+                        }
+                    }
+                }
+            }
+
+            Button(
+                enabled = state.activeButtons,
+                modifier = Modifier.padding(4.dp),
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                onClick = { state.selectServerDropDownState = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Servers"
+                )
+                Text("Select server")
+            }
+
+            DropdownMenu(
+                expanded = state.selectServerDropDownState,
+                onDismissRequest = { state.selectServerDropDownState = false }
+            ) {
+                state.configMap.forEach { configPair ->
+                    DropdownMenuItem(
+                        onClick = {
+                            state.onServerSelect(View.HISTORY, configPair)
+                        }
+                    ) {
+                        Text(configPair.first)
+                    }
+                }
+                DropdownMenuItem(
+                    onClick = {
+                        state.onServerSelect(View.ADD_SERVER, null)
+                    }
+                ) {
+                    Text("Add new server")
+                }
+            }
+
+            if (state.selectedConfig != null) {
+                CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
+                    state.view = View.PASTE_BAG
+                }
+            }
+
+        }
+
+        BannerRow(
+            "Selected server: " +
+                    (state.selectedConfig?.first ?: "select server from dropdown")
+        )
+    }
 
 }
 
@@ -232,20 +213,15 @@ fun main() = application {
     ) {
         LaunchedEffect(state) {
             snapshotFlow { state.size }
-                .onEach {
-                    onWindowResize(it, state)
-                }
+                .onEach(::onWindowResize)
                 .launchIn(this)
         }
         window.minimumSize = Dimension(800, 600)
+        window.maximumSize = Dimension(850, 2000)
         App(remember { UIState(configMap) }, state)
     }
 }
 
 // https://github.com/JetBrains/compose-multiplatform/tree/master/tutorials/Window_API_new
-private fun onWindowResize(size: DpSize, state: WindowState) {
-    println("onWindowResize $size")
-    //if (state.size.width < 800.dp) state.size = state.size.copy( width = 800.dp)
-    //if (state.size.height < 600.dp) state.size = state.size.copy( height = 600.dp)
-
+private fun onWindowResize(size: DpSize) {
 }

@@ -7,8 +7,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.osprey.trunkfriends.config.Config
-import org.osprey.trunkfriends.historyhandler.refresh
-import org.osprey.trunkfriends.managementhandler.managementAction
+import org.osprey.trunkfriends.handlers.refreshHistory
+import org.osprey.trunkfriends.handlers.managementAction
 import org.osprey.trunkfriends.ui.history.HistoryViewState
 
 class UIState(var configMap: MutableList<Pair<String, Config>>) {
@@ -29,13 +29,19 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
 
     var historyViewState = HistoryViewState()
 
+    fun getSelectedConfig() =
+        selectedConfig?.first ?: "No Server"
+
+
     fun startListRefresh() {
         if (refreshActive) return
         refreshActive = true
+
         coroutineScope.launch {
             activeButtons = false
-            refresh(
-                selectedConfig ?: throw IllegalStateException("Should not be null"),
+            refreshHistory(
+                selectedConfig
+                     ?: throw IllegalStateException("Should not be null"),
                 { !refreshActive }
             ) { param ->
                 feedback = param
@@ -96,4 +102,11 @@ class UIState(var configMap: MutableList<Pair<String, Config>>) {
             historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
         else
             historyViewState.pasteBag.take(limit).reduce { acc, s -> "$acc\n$s" }
+
+    fun changeView(newView: View) {
+        if (view != newView) {
+            view = newView
+            historyViewState.reset()
+        }
+    }
 }

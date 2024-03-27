@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.historyhandler.HistoryHandler
+import org.osprey.trunkfriends.dal.HistoryHandler
 import org.osprey.trunkfriends.ui.history.followCard
 import java.util.*
 import kotlin.Comparator
@@ -66,16 +66,20 @@ class CompareUser(
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
-    serverUser: String,
-    onNameChange: (String?, View) -> Unit
+    state: UIState,
+    height: Int
 ) {
+    fun rows() =
+        (height - 200) / 27
+
+    println("xxx $historyState ${historyState.time}")
     val sortDropDown = remember { mutableStateOf(false) }
     val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
     val searchText = remember { mutableStateOf<String?>(null) }
 
     // Create a list of accounts from history-map, keeping the latest account follow / following status
-    val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
-        .sortedWith(CompareUser(serverUser.split("/")[0], sortState.value))
+    val list = HistoryHandler().readHistory(state.getSelectedConfig()).associate { it.first.acct to it.first }.map { it.value }
+        .sortedWith(CompareUser(state.getSelectedConfig().split("/")[0], sortState.value))
 
     Column(
         modifier = Modifier
@@ -134,7 +138,7 @@ server with requests. Once followers are imported, you will see them here.
                         expanded = sortDropDown.value,
                         onDismissRequest = { sortDropDown.value = false }
                     ) {
-                        SortStyle.values().forEach {
+                        SortStyle.entries.forEach {
                             CommonDropDownItem(text = it.text) {
                                 sortState.value = SortStyle.valueOf(it.name)
                                 sortDropDown.value = false
@@ -149,7 +153,7 @@ server with requests. Once followers are imported, you will see them here.
                     .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
                 if (it != null) {
-                    it.chunked(14).apply {
+                    it.chunked(rows()).apply {
                         Card(
                             elevation = Dp(2F),
                             modifier = Modifier
@@ -162,7 +166,7 @@ server with requests. Once followers are imported, you will see them here.
                                 drop(historyState.page).first().forEach { historyCard ->
                                     Row(modifier = Modifier.align(Alignment.Start)) {
                                         followCard(historyCard, historyState, View.LIST) { name, view ->
-                                            onNameChange(name, view)
+                                            state.changeZoom(name, view)
                                             historyState.storeHistoryPage()
                                         }
                                     }

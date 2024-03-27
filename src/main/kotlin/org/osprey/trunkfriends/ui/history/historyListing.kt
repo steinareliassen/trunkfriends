@@ -14,11 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.osprey.trunkfriends.historyhandler.HistoryHandler
-import org.osprey.trunkfriends.ui.BannerRow
-import org.osprey.trunkfriends.ui.CommonButton
-import org.osprey.trunkfriends.ui.CommonIconButton
-import org.osprey.trunkfriends.ui.View
+import org.osprey.trunkfriends.dal.HistoryHandler
+import org.osprey.trunkfriends.ui.*
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -27,10 +24,13 @@ import java.util.*
 @Composable
 fun historyListing(
     historyState: HistoryViewState,
-    serverUser: String,
+    state: UIState,
     zoomedName: String?,
-    onNameChange: (String?, View) -> Unit
+    height: Int
 ) {
+    fun rows() =
+        (height - 200) / 27
+
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
             .withLocale(Locale.GERMAN)
@@ -40,11 +40,11 @@ fun historyListing(
             }
 
     if (historyState.resetHistoryPage(zoomedName)) {
-        onNameChange(null, historyState.returnView)
+        state.changeZoom(null, historyState.returnView)
         return
     }
 
-    val history = HistoryHandler().readHistory(serverUser)
+    val history = HistoryHandler().readHistory(state.getSelectedConfig())
 
     // Did we just get to history view from another view? If so, calculate the time of the
     // last page, and return, so UI can refresh to that page.
@@ -122,7 +122,7 @@ server with requests. Once followers are imported, you will see them here.
 
             HistoryHandler().createHistoryCards(history).filter {
                 ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
-            }.chunked(if (zoomedName == null) 14 else 8).apply {
+            }.chunked(if (zoomedName == null) rows() else rows()/2).apply {
                 Card(
                     elevation = Dp(2F),
                     modifier = Modifier
@@ -141,7 +141,7 @@ server with requests. Once followers are imported, you will see them here.
                                     }
                                 } else {
                                     followCard(historyCard, historyState, View.HISTORY) { name, view ->
-                                        onNameChange(name, view)
+                                        state.changeZoom(name, view)
                                         historyState.storeHistoryPage()
                                     }
                                 }
