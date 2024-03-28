@@ -1,10 +1,10 @@
 package org.osprey.trunkfriends.handlers
 
 import kotlinx.coroutines.delay
-import org.osprey.trunkfriends.api.CurrentUser
+import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.api.Direction
 import org.osprey.trunkfriends.config.Config
-import org.osprey.trunkfriends.dal.HistoryHandler
+import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.util.extractError
 
 suspend fun refreshHistory(selectedConfig : Pair<String, Config>, isCancelled : () -> Boolean, feedbackFunction: (String) -> Unit) {
@@ -36,23 +36,13 @@ suspend fun refreshHistory(selectedConfig : Pair<String, Config>, isCancelled : 
 
             }
 
-        val historyHandler = HistoryHandler()
-
         // Find user status from previous run
-        val history =
-            historyHandler.readHistory(selectedConfig.first) // Read old history from file. History can contain multiple entries pr user
-        val latestHistory =
-            historyHandler.extractPreviousRun(history) // Find latest status of each user from history
+        val history = HistoryData(selectedConfig.first) // Read old history from file. History can contain multiple entries pr user
 
-
-        // Create and write new history
-        val newHistory = historyHandler.createNewHistory(
-            latestHistory,
-            currentUsers
-        ) // Compare previous run to current run and create new history lines
-        feedbackFunction("Imported lines : "+newHistory.size+"\n\n")
+         // write out old and new history combined based on
+        val newLines = history.writeHistory(currentUsers)
+        feedbackFunction("Imported lines : $newLines\n\n")
         delay(5000L)
-        historyHandler.writeHistory(selectedConfig.first,history + newHistory) // write out old and new history combined*/
     } catch (e : InterruptedException) {
         return
     } catch (e : Exception) {

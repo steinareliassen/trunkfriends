@@ -1,5 +1,8 @@
 package org.osprey.trunkfriends.api
 
+import org.osprey.trunkfriends.api.dto.FollowStatus
+import org.osprey.trunkfriends.api.dto.ListClass
+import org.osprey.trunkfriends.api.dto.UserClass
 import org.osprey.trunkfriends.config.Config
 
 abstract class GenericHostInterface(protected val config: Config) {

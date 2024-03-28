@@ -8,6 +8,7 @@ data class Config(
     val bearer : String,
     val server : String
 ) {
+    // For future support of different hosts. Config must be extended with host type.
     @JsonIgnore
     val hostInterface : GenericHostInterface = MastodonApi(this)
 }

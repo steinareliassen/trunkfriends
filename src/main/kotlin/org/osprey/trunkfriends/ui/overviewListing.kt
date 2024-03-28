@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.dal.HistoryHandler
+import org.osprey.trunkfriends.api.dto.CurrentUser
+import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.ui.history.followCard
 import java.util.*
 import kotlin.Comparator
@@ -72,14 +72,12 @@ fun overviewListing(
     fun rows() =
         (height - 200) / 27
 
-    println("xxx $historyState ${historyState.time}")
     val sortDropDown = remember { mutableStateOf(false) }
     val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
     val searchText = remember { mutableStateOf<String?>(null) }
 
     // Create a list of accounts from history-map, keeping the latest account follow / following status
-    val list = HistoryHandler().readHistory(state.getSelectedConfig()).associate { it.first.acct to it.first }.map { it.value }
-        .sortedWith(CompareUser(state.getSelectedConfig().split("/")[0], sortState.value))
+    val history = HistoryData(state.getSelectedConfig())
 
     Column(
         modifier = Modifier
@@ -87,7 +85,7 @@ fun overviewListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (list.isEmpty()) {
+        if (!history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -148,45 +146,44 @@ server with requests. Once followers are imported, you will see them here.
                 }
             }
 
-            HistoryHandler().createListCards(list).filter {
+            history.createListCards(
+                CompareUser(state.getSelectedConfig().split("/")[0], sortState.value)
+            ).filter {
                 searchText.value == null || it.acct.lowercase(Locale.getDefault())
                     .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
-                if (it != null) {
-                    it.chunked(rows()).apply {
-                        Card(
-                            elevation = Dp(2F),
-                            modifier = Modifier
-                                .width(740.dp)
-                                .wrapContentHeight()
-                                .padding(2.dp)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                                drop(historyState.page).first().forEach { historyCard ->
-                                    Row(modifier = Modifier.align(Alignment.Start)) {
-                                        followCard(historyCard, historyState, View.LIST) { name, view ->
-                                            state.changeZoom(name, view)
-                                            historyState.storeHistoryPage()
-                                        }
+                it?.chunked(rows())?.apply {
+                    Card(
+                        elevation = Dp(2F),
+                        modifier = Modifier
+                            .width(740.dp)
+                            .wrapContentHeight()
+                            .padding(2.dp)
+                            .align(Alignment.CenterHorizontally)
+                    ) {
+                        Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                            drop(historyState.page).first().forEach { historyCard ->
+                                Row(modifier = Modifier.align(Alignment.Start)) {
+                                    followCard(historyCard, historyState, View.LIST) { name, view ->
+                                        state.changeZoom(name, view)
+                                        historyState.storeHistoryPage()
                                     }
                                 }
                             }
                         }
+                    }
 
-                        Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                                historyState.page--
-                            }
-                            CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                            if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                                historyState.page++
-                            }
+                    Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        if (historyState.page > 0) CommonButton(text = "<< prev page") {
+                            historyState.page--
+                        }
+                        CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
+                        if (historyState.page < size - 1) CommonButton(text = "next page >>") {
+                            historyState.page++
                         }
                     }
-                } else {
-                    BannerRow("Search returned no results")
                 }
+                    ?: BannerRow("Search returned no results")
             }
         }
     }

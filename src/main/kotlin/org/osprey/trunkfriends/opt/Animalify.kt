@@ -1,7 +1,6 @@
 package org.osprey.trunkfriends.opt
 
-import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.dal.HistoryHandler
+import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 import java.util.*
@@ -47,10 +46,10 @@ fun toAnimal(server : String, username : String) : Pair<String,String> {
 }
 
 // Transform a real history into animalified history
-
+/*
 fun ymain() {
 
-    val corrupted = HistoryHandler().readHistory("tech.lgbt/lettosprey").map { (curr, stri) ->
+    val corrupted = HistoryData(("tech.lgbt/lettosprey")).history.map { (curr, stri) ->
         curr.run {
             val split = acct.split("@")
             val servername = if (split.size > 1) split[1] else "tech.lgbt"
@@ -67,3 +66,4 @@ fun ymain() {
 
     writeMessyHistory(corrupted)
 }
+*/

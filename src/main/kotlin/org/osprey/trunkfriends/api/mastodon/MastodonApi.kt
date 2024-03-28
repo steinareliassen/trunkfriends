@@ -1,6 +1,9 @@
 package org.osprey.trunkfriends.api.mastodon
 
 import org.osprey.trunkfriends.api.*
+import org.osprey.trunkfriends.api.dto.FollowStatus
+import org.osprey.trunkfriends.api.dto.ListClass
+import org.osprey.trunkfriends.api.dto.UserClass
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.handlers.sleepAndCheck
 import org.osprey.trunkfriends.util.mapper

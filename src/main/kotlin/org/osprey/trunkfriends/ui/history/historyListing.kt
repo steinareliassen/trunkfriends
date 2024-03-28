@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.osprey.trunkfriends.dal.HistoryHandler
+import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.ui.*
 import java.time.Instant
 import java.time.ZoneId
@@ -44,17 +44,13 @@ fun historyListing(
         return
     }
 
-    val history = HistoryHandler().readHistory(state.getSelectedConfig())
+    val history = HistoryData(state.getSelectedConfig())
 
     // Did we just get to history view from another view? If so, calculate the time of the
     // last page, and return, so UI can refresh to that page.
     if (history.isNotEmpty() && historyState.time == 0L) {
-        historyState.time = history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.max()
-        historyState.timeslotPage = history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.distinct().size - 1
+        historyState.time = history.getTimeslots().max()
+        historyState.timeslotPage = history.getTimeslots().distinct().size - 1
         return
     }
 
@@ -64,7 +60,7 @@ fun historyListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (history.isEmpty()) {
+        if (!history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -76,9 +72,7 @@ server with requests. Once followers are imported, you will see them here.
             )
         } else {
 
-            val timeslots = history.map { (_, control) ->
-                control.substring(0, control.length - 3).toLong()
-            }.distinct()
+            val timeslots = history.getTimeslots()
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 if (history.isNotEmpty() && zoomedName == null) {
@@ -120,7 +114,7 @@ server with requests. Once followers are imported, you will see them here.
                 }
             }
 
-            HistoryHandler().createHistoryCards(history).filter {
+            history.createHistoryCards().filter {
                 ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
             }.chunked(if (zoomedName == null) rows() else rows()/2).apply {
                 Card(
