@@ -66,15 +66,16 @@ class CompareUser(
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
-    state: UIState,
+    state: AppState,
     height: Int
 ) {
     fun rows() =
         (height - 200) / 27
 
-    val sortDropDown = remember { mutableStateOf(false) }
+    val sortDropDownExpanded = remember { mutableStateOf(false) }
     val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
-    val searchText = remember { mutableStateOf<String?>(null) }
+    val searchText = remember { mutableStateOf("") }
+    val page = remember { mutableStateOf(0) }
 
     // Create a list of accounts from history-map, keeping the latest account follow / following status
     val history = HistoryData(state.getSelectedConfig())
@@ -96,34 +97,35 @@ server with requests. Once followers are imported, you will see them here.
             """.trimIndent(), 16f
             )
         } else {
+            val searchTextFieldText = remember { mutableStateOf<String?>(null) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     singleLine = true,
                     modifier = Modifier.width(500.dp),
-                    enabled = searchText.value == null,
-                    value = historyState.searchText,
+                    enabled = searchTextFieldText.value == null,
+                    value = searchText.value,
                     onValueChange = {
-                        historyState.searchText = it
+                        searchText.value = it
                     },
                     label = { Text("Text to search for") }
                 )
                 CommonButton(
-                    enabled = historyState.searchText.isNotBlank(),
-                    text = if (searchText.value == null) "Search" else "Clear"
+                    enabled = searchText.value.isNotBlank(),
+                    text = if (searchTextFieldText.value == null) "Search" else "Clear"
                 ) {
-                    historyState.page = 0
-                    if (searchText.value != null) {
-                        searchText.value = null
-                        historyState.searchText = ""
-                    } else searchText.value = historyState.searchText
+                    page.value = 0
+                    if (searchTextFieldText.value != null) {
+                        searchTextFieldText.value = null
+                        searchText.value = ""
+                    } else searchTextFieldText.value = searchText.value
                 }
                 Box {
                     Button(
                         enabled = true,
                         modifier = Modifier.padding(4.dp),
                         colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                        onClick = { sortDropDown.value = true }
+                        onClick = { sortDropDownExpanded.value = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowDropDown,
@@ -133,13 +135,13 @@ server with requests. Once followers are imported, you will see them here.
                     }
 
                     DropdownMenu(
-                        expanded = sortDropDown.value,
-                        onDismissRequest = { sortDropDown.value = false }
+                        expanded = sortDropDownExpanded.value,
+                        onDismissRequest = { sortDropDownExpanded.value = false }
                     ) {
                         SortStyle.entries.forEach {
                             CommonDropDownItem(text = it.text) {
                                 sortState.value = SortStyle.valueOf(it.name)
-                                sortDropDown.value = false
+                                sortDropDownExpanded.value = false
                             }
                         }
                     }
@@ -149,8 +151,8 @@ server with requests. Once followers are imported, you will see them here.
             history.createListCards(
                 CompareUser(state.getSelectedConfig().split("/")[0], sortState.value)
             ).filter {
-                searchText.value == null || it.acct.lowercase(Locale.getDefault())
-                    .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
+                searchTextFieldText.value == null || it.acct.lowercase(Locale.getDefault())
+                    .contains(searchTextFieldText.value?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
                 it?.chunked(rows())?.apply {
                     Card(
@@ -162,11 +164,11 @@ server with requests. Once followers are imported, you will see them here.
                             .align(Alignment.CenterHorizontally)
                     ) {
                         Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                            drop(historyState.page).first().forEach { historyCard ->
+                            drop(page.value).first().forEach { historyCard ->
                                 Row(modifier = Modifier.align(Alignment.Start)) {
-                                    followCard(historyCard, historyState, View.LIST) { name, view ->
+                                    followCard(historyCard, state.pasteBag, View.LIST) { name, view ->
                                         state.changeZoom(name, view)
-                                        historyState.storeHistoryPage()
+                                        historyState.storeHistoryPage(page.value)
                                     }
                                 }
                             }
@@ -174,12 +176,12 @@ server with requests. Once followers are imported, you will see them here.
                     }
 
                     Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                            historyState.page--
+                        if (page.value > 0) CommonButton(text = "<< prev page") {
+                            page.value--
                         }
-                        CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                        if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                            historyState.page++
+                        CommonButton(enabled = false, text = "${page.value + 1}/${size}") {}
+                        if (page.value < size - 1) CommonButton(text = "next page >>") {
+                            page.value++
                         }
                     }
                 }

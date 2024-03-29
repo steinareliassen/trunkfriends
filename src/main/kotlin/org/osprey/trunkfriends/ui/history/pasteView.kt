@@ -19,8 +19,9 @@ import org.osprey.trunkfriends.ui.*
 
 
 @Composable
-fun pasteView(state: UIState) {
+fun pasteView(pasteBag: PasteBag) {
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
+
     Text("\n")
 
     Row(
@@ -38,7 +39,7 @@ fun pasteView(state: UIState) {
             )
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                text = state.getSelected(15)+"\n",
+                text = pasteBag.getSelected(15)+"\n",
                 fontSize = TextUnit(18f, TextUnitType.Sp)
             )
 
@@ -56,11 +57,11 @@ fun pasteView(state: UIState) {
         ) {
             CommonButton(text = "Copy accounts to clipboard") {
                 clipboardManager.setText(
-                    AnnotatedString(state.getSelected())
+                    AnnotatedString(pasteBag.getSelected())
                 )
             }
             CommonButton(text = "Clear selections") {
-                state.clearSelect()
+                pasteBag.clearSelect()
             }
 
         }

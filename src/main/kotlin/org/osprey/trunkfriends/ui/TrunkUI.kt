@@ -7,10 +7,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -25,6 +22,7 @@ import org.osprey.trunkfriends.ui.authenticate.AuthState
 import org.osprey.trunkfriends.ui.authenticate.authenticateView
 import org.osprey.trunkfriends.ui.history.historyListing
 import org.osprey.trunkfriends.ui.history.pasteView
+import org.osprey.trunkfriends.ui.refresh.refreshView
 import org.osprey.trunkfriends.util.mapper
 import java.awt.Dimension
 import java.io.File
@@ -33,7 +31,7 @@ import java.nio.file.Paths
 
 @Composable
 @Preview
-fun App(state: UIState, wstate: WindowState) {
+fun App(state: AppState, wstate: WindowState) {
 
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
@@ -51,14 +49,13 @@ fun App(state: UIState, wstate: WindowState) {
                 state,
                 wstate.size.height.value.toInt()
             )
-            View.MANAGE -> addRemoveView(state)
+            View.MANAGE -> managementView(state)
             View.ABOUT -> aboutView()
-            View.PASTE_BAG -> pasteView(state)
+            View.PASTE_BAG -> pasteView(state.pasteBag)
             View.REFRESH -> {
-                if (state.view == View.REFRESH) state.context = null
                 refreshView(state)
             }
-            View.EXECUTE_MANAGEMENT -> refreshView(state)
+            View.EXECUTE_MANAGEMENT -> refreshView(state, state.managementAction)
             View.ADD_SERVER, View.NEW_TOKEN -> authenticateView(
                 remember {
                     AuthState(
@@ -76,7 +73,11 @@ fun App(state: UIState, wstate: WindowState) {
 }
 
 @Composable
-fun ButtonRowHeader(state: UIState) {
+fun ButtonRowHeader(state: AppState) {
+
+    val menuDrownDownState = remember { mutableStateOf(false) }
+    val selectServerDropDownState = remember { mutableStateOf(false) }
+
     // Zoomed header
     if (state.zoomedName != null) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -93,10 +94,10 @@ fun ButtonRowHeader(state: UIState) {
         Row(modifier = Modifier.fillMaxWidth()) {
 
             Button(
-                enabled = state.activeButtons,
+                enabled = !state.networkTaskActive,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.menuDrownDownState = true }
+                onClick = { menuDrownDownState.value = true }
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -106,8 +107,8 @@ fun ButtonRowHeader(state: UIState) {
             }
 
             DropdownMenu(
-                expanded = state.menuDrownDownState,
-                onDismissRequest = { state.menuDrownDownState = false }
+                expanded = menuDrownDownState.value,
+                onDismissRequest = { menuDrownDownState.value = false }
             ) {
                 listOf(
                     View.ABOUT, View.LIST, View.HISTORY,
@@ -115,7 +116,7 @@ fun ButtonRowHeader(state: UIState) {
                 ).forEach { view ->
                     if (view == View.ABOUT || state.selectedConfig != null)  {
                         CommonDropDownItem(text = view.title) {
-                            state.menuDrownDownState = false
+                            menuDrownDownState.value = false
                             state.changeView(view)
                         }
                     }
@@ -123,10 +124,10 @@ fun ButtonRowHeader(state: UIState) {
             }
 
             Button(
-                enabled = state.activeButtons,
+                enabled = !state.networkTaskActive,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.selectServerDropDownState = true }
+                onClick = { selectServerDropDownState.value = true }
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -136,13 +137,14 @@ fun ButtonRowHeader(state: UIState) {
             }
 
             DropdownMenu(
-                expanded = state.selectServerDropDownState,
-                onDismissRequest = { state.selectServerDropDownState = false }
+                expanded = selectServerDropDownState.value,
+                onDismissRequest = { selectServerDropDownState.value = false }
             ) {
                 state.configMap.forEach { configPair ->
                     DropdownMenuItem(
                         onClick = {
                             state.onServerSelect(View.HISTORY, configPair)
+                            selectServerDropDownState.value = false
                         }
                     ) {
                         Text(configPair.first)
@@ -151,6 +153,7 @@ fun ButtonRowHeader(state: UIState) {
                 DropdownMenuItem(
                     onClick = {
                         state.onServerSelect(View.ADD_SERVER, null)
+                        selectServerDropDownState.value = false
                     }
                 ) {
                     Text("Add new server")
@@ -158,7 +161,7 @@ fun ButtonRowHeader(state: UIState) {
             }
 
             if (state.selectedConfig != null) {
-                CommonButton(enabled = state.activeButtons, text = "(${state.historyViewState.pasteBag.size}) Bag") {
+                CommonButton(enabled = !state.networkTaskActive, text = "(${state.pasteBag.getSize()}) Bag") {
                     state.view = View.PASTE_BAG
                 }
             }
@@ -218,7 +221,7 @@ fun main() = application {
         }
         window.minimumSize = Dimension(800, 600)
         window.maximumSize = Dimension(850, 2000)
-        App(remember { UIState(configMap) }, state)
+        App(remember { AppState(configMap) }, state)
     }
 }
 

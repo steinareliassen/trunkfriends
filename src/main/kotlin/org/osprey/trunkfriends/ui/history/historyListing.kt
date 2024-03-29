@@ -7,7 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,12 +24,26 @@ import java.util.*
 @Composable
 fun historyListing(
     historyState: HistoryViewState,
-    state: UIState,
+    state: AppState,
     zoomedName: String?,
     height: Int
 ) {
+    val history = HistoryData(state.getSelectedConfig())
+    var timeslotPage by remember { mutableStateOf(history.getTimeslots().distinct().size - 1) }
+    val page = remember { mutableStateOf(0) }
+
     fun rows() =
         (height - 200) / 27
+
+    fun nextTimeslot()  {
+        timeslotPage++
+        page.value = 0
+    }
+
+    fun previousTimeslot()  {
+        timeslotPage--
+        page.value = 0
+    }
 
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -40,17 +54,8 @@ fun historyListing(
             }
 
     if (historyState.resetHistoryPage(zoomedName)) {
-        state.changeZoom(null, historyState.returnView)
-        return
-    }
-
-    val history = HistoryData(state.getSelectedConfig())
-
-    // Did we just get to history view from another view? If so, calculate the time of the
-    // last page, and return, so UI can refresh to that page.
-    if (history.isNotEmpty() && historyState.time == 0L) {
-        historyState.time = history.getTimeslots().max()
-        historyState.timeslotPage = history.getTimeslots().distinct().size - 1
+        timeslotPage = historyState.returnTimeslot
+        state.changeZoom(null, state.returnView)
         return
     }
 
@@ -73,40 +78,40 @@ server with requests. Once followers are imported, you will see them here.
         } else {
 
             val timeslots = history.getTimeslots()
+            val historyDropdownState = remember { mutableStateOf(false) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 if (history.isNotEmpty() && zoomedName == null) {
-                    CommonIconButton(text = timestampToDateString(historyState.time), icon = Icons.Default.MoreVert) {
-                        historyState.historyDropdownState = true
+                    CommonIconButton(text = timestampToDateString(timeslots[timeslotPage]), icon = Icons.Default.MoreVert) {
+                        historyDropdownState.value = true
                     }
-                    if (historyState.timeslotPage > 0)
+                    if (timeslotPage > 0)
                         CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
-                            historyState.time = timeslots[historyState.previousTimeslot()]
+                            previousTimeslot()
                         }
-                    CommonButton(enabled = false, text = "${historyState.timeslotPage + 1}/${timeslots.size}") {}
-                    if (historyState.timeslotPage < timeslots.size - 1)
+                    CommonButton(enabled = false, text = "${timeslotPage + 1}/${timeslots.size}") {}
+                    if (timeslotPage < timeslots.size - 1)
                         CommonIconButton(
                             text = "Next timeslot",
                             icon = Icons.Default.ArrowForward,
                             iconBefore = false
                         ) {
-                            historyState.time = timeslots[historyState.nextTimeslot()]
+                            nextTimeslot()
                         }
                 }
             }
 
             DropdownMenu(
-                expanded = historyState.historyDropdownState,
-                onDismissRequest = { historyState.historyDropdownState = false }
+                expanded = historyDropdownState.value,
+                onDismissRequest = { historyDropdownState.value = false }
             ) {
 
                 timeslots.forEachIndexed { i, time ->
                     DropdownMenuItem(
                         onClick = {
-                            historyState.time = time
-                            historyState.timeslotPage = i
-                            historyState.page = 0
-                            historyState.historyDropdownState = false
+                            timeslotPage = i
+                            page.value = 0
+                            historyDropdownState.value = false
                         }
                     ) {
                         Text(timestampToDateString(time))
@@ -115,7 +120,7 @@ server with requests. Once followers are imported, you will see them here.
             }
 
             history.createHistoryCards().filter {
-                ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
+                ((zoomedName == null && timeslots[timeslotPage] == it.timeStamp) || zoomedName == it.acct)
             }.chunked(if (zoomedName == null) rows() else rows()/2).apply {
                 Card(
                     elevation = Dp(2F),
@@ -126,17 +131,17 @@ server with requests. Once followers are imported, you will see them here.
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                        drop(historyState.page).first().forEach { historyCard ->
+                        drop(page.value).first().forEach { historyCard ->
                             Row(modifier = Modifier.align(Alignment.Start)) {
                                 if (zoomedName != null) {
                                     Column {
                                         Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                        followCard(historyCard, historyState, View.HISTORY)
+                                        followCard(historyCard, state.pasteBag, View.HISTORY)
                                     }
                                 } else {
-                                    followCard(historyCard, historyState, View.HISTORY) { name, view ->
+                                    followCard(historyCard, state.pasteBag, View.HISTORY) { name, view ->
                                         state.changeZoom(name, view)
-                                        historyState.storeHistoryPage()
+                                        historyState.storeHistoryPage(timeslotPage)
                                     }
                                 }
                             }
@@ -145,12 +150,12 @@ server with requests. Once followers are imported, you will see them here.
                 }
 
                 Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                        historyState.page--
+                    if (page.value > 0) CommonButton(text = "<< prev page") {
+                        page.value--
                     }
-                    CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                    if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                        historyState.page++
+                    CommonButton(enabled = false, text = "${page.value + 1}/${size}") {}
+                    if (page.value < size - 1) CommonButton(text = "next page >>") {
+                        page.value++
                     }
                 }
             }
@@ -176,7 +181,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 @Composable
 fun followCard(
     historyCard: HistoryCard,
-    historyState: HistoryViewState,
+    pasteBag: PasteBag,
     view: View,
     onNameChange: ((String?, View) -> Unit)? = null
 ) {
@@ -233,12 +238,12 @@ fun followCard(
                 }
                 Column {
                     Checkbox(
-                        checked = historyState.pasteBag.contains(acct),
+                        checked = pasteBag.contains(acct),
                         onCheckedChange = {
-                            if (historyState.pasteBag.contains(acct)) {
-                                historyState.pasteBag.remove(acct)
+                            if (pasteBag.contains(acct)) {
+                                pasteBag.remove(acct)
                             } else {
-                                historyState.pasteBag.add(acct)
+                                pasteBag.add(acct)
                             }
                         }
                     )

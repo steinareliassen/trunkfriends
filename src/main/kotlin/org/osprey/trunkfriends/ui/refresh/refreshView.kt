@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends.ui
+package org.osprey.trunkfriends.ui.refresh
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -7,13 +7,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.osprey.trunkfriends.handlers.managementAction
+import org.osprey.trunkfriends.handlers.refreshHistory
+import org.osprey.trunkfriends.ui.*
 
 // This is not pretty, need to be refactored.
 val bannerRefresh =
@@ -39,15 +43,59 @@ fun executeManagement(list: List<String>, action: ManagementAction) =
                             """
 
 @Composable
-fun refreshView(state: UIState) {
+fun refreshView(state: AppState, action : ManagementAction? = null) {
+
+    val coroutineScope = CoroutineScope(Dispatchers.Main)
+    var feedback by remember { mutableStateOf("Refreshing") }
+
+    val feedbackFunction = { param : String ->
+        feedback = param
+    }
+
+    fun runBackgroundTask(returnView: View, task : () -> Unit) {
+        if (state.networkTaskActive) return
+        state.networkTaskActive = true
+
+        task()
+
+        state.networkTaskActive = false
+        state.view = returnView
+    }
+
+    fun startListRefresh() {
+        runBackgroundTask(View.REFRESH) {
+            coroutineScope.launch {
+                refreshHistory(
+                    state.selectedConfig
+                        ?: throw IllegalStateException("Should not be null"),
+                    { !state.networkTaskActive },
+                    feedbackFunction
+                )
+            }
+        }
+    }
+
+    fun startExecuteManagementAction(action: ManagementAction, accounts: List<String>, list: String? = null) {
+        runBackgroundTask(View.MANAGE) {
+            coroutineScope.launch {
+                managementAction(
+                    accounts,
+                    action,
+                    list,
+                    state.selectedConfig ?: throw IllegalStateException("Should not be null"),
+                    { !state.networkTaskActive },
+                    feedbackFunction
+                )
+            }
+        }
+    }
+
     val selectedList = remember { mutableStateOf<String?>(null) }
     val selectedDropdown = remember { mutableStateOf(false) }
 
-    val action = state.context
     Text("\n")
 
-    // Need to solve this in a better way.
-    if (state.activeButtons) {
+    if (!state.networkTaskActive) {
         BannerRow(
             if (action == null)
                 bannerRefresh
@@ -56,11 +104,11 @@ fun refreshView(state: UIState) {
             14f
         )
     } else {
-        BannerRow(state.feedback, 16f)
+        BannerRow(feedback, 16f)
     }
     Text("\n")
 
-    if (!state.activeButtons) {
+    if (state.networkTaskActive) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(1f)
@@ -70,7 +118,7 @@ fun refreshView(state: UIState) {
             Button(
                 modifier = Modifier.padding(4.dp).align(Alignment.CenterHorizontally),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { state.refreshActive = false }
+                onClick = { state.networkTaskActive = false }
             ) {
                 Text("Click to cancel.")
             }
@@ -127,9 +175,9 @@ fun refreshView(state: UIState) {
                     onClick = {
                         try {
                             if (action == null)
-                                state.startListRefresh()
+                                startListRefresh()
                             else
-                                state.startExecuteManagementAction(action, state.actionList, selectedList.value)
+                                startExecuteManagementAction(action, state.actionList, selectedList.value)
                         } finally {
                             selectedList.value = null
                         }
