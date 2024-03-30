@@ -6,16 +6,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.osprey.trunkfriends.api.dto.CurrentUser
-import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.ui.history.followCard
 import java.util.*
 import kotlin.Comparator
@@ -72,13 +69,19 @@ fun overviewListing(
     fun rows() =
         (height - 200) / 27
 
-    val sortDropDownExpanded = remember { mutableStateOf(false) }
-    val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
-    val searchText = remember { mutableStateOf("") }
-    val page = remember { mutableStateOf(0) }
+    var sortDropDownExpanded by remember { mutableStateOf(false) }
+    var sortState by remember { mutableStateOf(SortStyle.ACCOUNT) }
+    var searchText by remember { mutableStateOf("") }
 
-    // Create a list of accounts from history-map, keeping the latest account follow / following status
-    val history = HistoryData(state.getSelectedConfig())
+    var page by remember { mutableStateOf(0) }
+    var rowsByPage by remember { mutableStateOf(0) }
+
+    // If we have changed window height enough to change number of rows, reset page counter
+    // to avoid hitting a page that no longer exist.
+    if (rowsByPage != rows()) {
+        rowsByPage = rows()
+        page = 0
+    }
 
     Column(
         modifier = Modifier
@@ -86,7 +89,7 @@ fun overviewListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (!history.isNotEmpty()) {
+        if (!state.history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -97,35 +100,35 @@ server with requests. Once followers are imported, you will see them here.
             """.trimIndent(), 16f
             )
         } else {
-            val searchTextFieldText = remember { mutableStateOf<String?>(null) }
+            var searchTextFieldText by remember { mutableStateOf<String?>(null) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     singleLine = true,
                     modifier = Modifier.width(500.dp),
-                    enabled = searchTextFieldText.value == null,
-                    value = searchText.value,
+                    enabled = searchTextFieldText == null,
+                    value = searchText,
                     onValueChange = {
-                        searchText.value = it
+                        searchText = it
                     },
                     label = { Text("Text to search for") }
                 )
                 CommonButton(
-                    enabled = searchText.value.isNotBlank(),
-                    text = if (searchTextFieldText.value == null) "Search" else "Clear"
+                    enabled = searchText.isNotBlank(),
+                    text = if (searchTextFieldText == null) "Search" else "Clear"
                 ) {
-                    page.value = 0
-                    if (searchTextFieldText.value != null) {
-                        searchTextFieldText.value = null
-                        searchText.value = ""
-                    } else searchTextFieldText.value = searchText.value
+                    page = 0
+                    if (searchTextFieldText != null) {
+                        searchTextFieldText = null
+                        searchText = ""
+                    } else searchTextFieldText = searchText
                 }
                 Box {
                     Button(
                         enabled = true,
                         modifier = Modifier.padding(4.dp),
                         colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                        onClick = { sortDropDownExpanded.value = true }
+                        onClick = { sortDropDownExpanded = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowDropDown,
@@ -135,24 +138,24 @@ server with requests. Once followers are imported, you will see them here.
                     }
 
                     DropdownMenu(
-                        expanded = sortDropDownExpanded.value,
-                        onDismissRequest = { sortDropDownExpanded.value = false }
+                        expanded = sortDropDownExpanded,
+                        onDismissRequest = { sortDropDownExpanded = false }
                     ) {
                         SortStyle.entries.forEach {
                             CommonDropDownItem(text = it.text) {
-                                sortState.value = SortStyle.valueOf(it.name)
-                                sortDropDownExpanded.value = false
+                                sortState = SortStyle.valueOf(it.name)
+                                sortDropDownExpanded = false
                             }
                         }
                     }
                 }
             }
 
-            history.createListCards(
-                CompareUser(state.getSelectedConfig().split("/")[0], sortState.value)
+            state.history.createListCards(
+                CompareUser(state.getSelectedConfig().split("/")[0], sortState)
             ).filter {
-                searchTextFieldText.value == null || it.acct.lowercase(Locale.getDefault())
-                    .contains(searchTextFieldText.value?.lowercase(Locale.getDefault()) ?: "")
+                searchTextFieldText == null || it.acct.lowercase(Locale.getDefault())
+                    .contains(searchTextFieldText?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
                 it?.chunked(rows())?.apply {
                     Card(
@@ -164,11 +167,11 @@ server with requests. Once followers are imported, you will see them here.
                             .align(Alignment.CenterHorizontally)
                     ) {
                         Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                            drop(page.value).first().forEach { historyCard ->
+                            drop(page).first().forEach { historyCard ->
                                 Row(modifier = Modifier.align(Alignment.Start)) {
                                     followCard(historyCard, state.pasteBag, View.LIST) { name, view ->
                                         state.changeZoom(name, view)
-                                        historyState.storeHistoryPage(page.value)
+                                        historyState.storeHistoryPage(page)
                                     }
                                 }
                             }
@@ -176,12 +179,12 @@ server with requests. Once followers are imported, you will see them here.
                     }
 
                     Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        if (page.value > 0) CommonButton(text = "<< prev page") {
-                            page.value--
+                        if (page > 0) CommonButton(text = "<< prev page") {
+                            page--
                         }
-                        CommonButton(enabled = false, text = "${page.value + 1}/${size}") {}
-                        if (page.value < size - 1) CommonButton(text = "next page >>") {
-                            page.value++
+                        CommonButton(enabled = false, text = "${page + 1}/${size}") {}
+                        if (page < size - 1) CommonButton(text = "next page >>") {
+                            page++
                         }
                     }
                 }

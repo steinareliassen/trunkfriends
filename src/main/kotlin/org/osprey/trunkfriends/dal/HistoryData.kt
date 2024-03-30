@@ -12,20 +12,20 @@ class HistoryData(
 ) {
 
     private val history  = mutableListOf<Pair<CurrentUser, String>>().also { history ->
-            val path = FileUtils.getUserDirectoryPath() + "/.trunkfriends/$configPath"
-            val file = File("$path/datafile.dmp")
-            if (file.exists()) {
-                file.readLines().forEach {
-                    val stra = it.substring(0, it.indexOf("-") + 3)
-                    val strb = it.substring(it.indexOf("-") + 3, it.length)
-                    val user = mapper.readValue(
-                        strb,
-                        CurrentUser::class.java
-                    )
-                    history.add(Pair(user, stra))
-                }
+        val path = FileUtils.getUserDirectoryPath() + "/.trunkfriends/$configPath"
+        val file = File("$path/datafile.dmp")
+        if (file.exists()) {
+            file.readLines().forEach {
+                val stra = it.substring(0, it.indexOf("-") + 3)
+                val strb = it.substring(it.indexOf("-") + 3, it.length)
+                val user = mapper.readValue(
+                    strb,
+                    CurrentUser::class.java
+                )
+                history.add(Pair(user, stra))
             }
         }
+    }
 
     fun isNotEmpty() = history.isNotEmpty()
 
@@ -36,20 +36,20 @@ class HistoryData(
     fun createListCards(compareUser: CompareUser) =
         history.associate { it.first.acct to it.first }.map { it.value }
             .sortedWith(compareUser).let {
-            it.map { user ->
-                with(user) {
-                    HistoryCard(
-                        follower = follower,
-                        prevFollower = follower,
-                        following = following,
-                        prevFollowing = following,
-                        acct = acct,
-                        username = username,
-                        timeStamp = 0L
-                    )
+                it.map { user ->
+                    with(user) {
+                        HistoryCard(
+                            follower = follower,
+                            prevFollower = follower,
+                            following = following,
+                            prevFollowing = following,
+                            acct = acct,
+                            username = username,
+                            timeStamp = 0L
+                        )
+                    }
                 }
             }
-        }
 
     fun createHistoryCards() =
         history.let {

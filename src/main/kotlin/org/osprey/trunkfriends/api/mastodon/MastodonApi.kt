@@ -115,12 +115,15 @@ class MastodonApi(
         var start = 0L
         val follow = mutableListOf<UserClass>()
         do {
+            println("FETCH!")
             val list = findUserPage(start, userId, direction)
             follow.addAll(list.first)
             feedbackFunction("$direction fetched: ${follow.size}")
             sleepAndCheck(isCancelled)
             start = list.second
         } while (start != 0L)
+        println("FETCH!2")
+
         return follow
     }
 

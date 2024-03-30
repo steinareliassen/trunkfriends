@@ -52,9 +52,7 @@ fun App(state: AppState, wstate: WindowState) {
             View.MANAGE -> managementView(state)
             View.ABOUT -> aboutView()
             View.PASTE_BAG -> pasteView(state.pasteBag)
-            View.REFRESH -> {
-                refreshView(state)
-            }
+            View.REFRESH -> refreshView(state)
             View.EXECUTE_MANAGEMENT -> refreshView(state, state.managementAction)
             View.ADD_SERVER, View.NEW_TOKEN -> authenticateView(
                 remember {
@@ -75,8 +73,8 @@ fun App(state: AppState, wstate: WindowState) {
 @Composable
 fun ButtonRowHeader(state: AppState) {
 
-    val menuDrownDownState = remember { mutableStateOf(false) }
-    val selectServerDropDownState = remember { mutableStateOf(false) }
+    var menuDrownDownState by remember { mutableStateOf(false) }
+    var selectServerDropDownState by remember { mutableStateOf(false) }
 
     // Zoomed header
     if (state.zoomedName != null) {
@@ -97,7 +95,7 @@ fun ButtonRowHeader(state: AppState) {
                 enabled = !state.networkTaskActive,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { menuDrownDownState.value = true }
+                onClick = { menuDrownDownState = true }
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -107,8 +105,8 @@ fun ButtonRowHeader(state: AppState) {
             }
 
             DropdownMenu(
-                expanded = menuDrownDownState.value,
-                onDismissRequest = { menuDrownDownState.value = false }
+                expanded = menuDrownDownState,
+                onDismissRequest = { menuDrownDownState = false }
             ) {
                 listOf(
                     View.ABOUT, View.LIST, View.HISTORY,
@@ -116,7 +114,7 @@ fun ButtonRowHeader(state: AppState) {
                 ).forEach { view ->
                     if (view == View.ABOUT || state.selectedConfig != null)  {
                         CommonDropDownItem(text = view.title) {
-                            menuDrownDownState.value = false
+                            menuDrownDownState = false
                             state.changeView(view)
                         }
                     }
@@ -127,7 +125,7 @@ fun ButtonRowHeader(state: AppState) {
                 enabled = !state.networkTaskActive,
                 modifier = Modifier.padding(4.dp),
                 colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                onClick = { selectServerDropDownState.value = true }
+                onClick = { selectServerDropDownState = true }
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -137,14 +135,14 @@ fun ButtonRowHeader(state: AppState) {
             }
 
             DropdownMenu(
-                expanded = selectServerDropDownState.value,
-                onDismissRequest = { selectServerDropDownState.value = false }
+                expanded = selectServerDropDownState,
+                onDismissRequest = { selectServerDropDownState = false }
             ) {
                 state.configMap.forEach { configPair ->
                     DropdownMenuItem(
                         onClick = {
                             state.onServerSelect(View.HISTORY, configPair)
-                            selectServerDropDownState.value = false
+                            selectServerDropDownState = false
                         }
                     ) {
                         Text(configPair.first)
@@ -153,7 +151,7 @@ fun ButtonRowHeader(state: AppState) {
                 DropdownMenuItem(
                     onClick = {
                         state.onServerSelect(View.ADD_SERVER, null)
-                        selectServerDropDownState.value = false
+                        selectServerDropDownState = false
                     }
                 ) {
                     Text("Add new server")

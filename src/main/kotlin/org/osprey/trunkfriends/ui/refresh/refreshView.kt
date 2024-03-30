@@ -55,9 +55,8 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
     fun runBackgroundTask(returnView: View, task : () -> Unit) {
         if (state.networkTaskActive) return
         state.networkTaskActive = true
-
+        println("Executing task")
         task()
-
         state.networkTaskActive = false
         state.view = returnView
     }
@@ -90,8 +89,8 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
         }
     }
 
-    val selectedList = remember { mutableStateOf<String?>(null) }
-    val selectedDropdown = remember { mutableStateOf(false) }
+    var selectedList by remember { mutableStateOf<String?>(null) }
+    var selectedDropdown by remember { mutableStateOf(false) }
 
     Text("\n")
 
@@ -139,13 +138,13 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                         val lists = state.selectedConfig?.second?.hostInterface?.getLists()
                             ?: throw IllegalStateException("Should not happen")
                         DropdownMenu(
-                            expanded = selectedDropdown.value,
-                            onDismissRequest = { selectedDropdown.value = false }
+                            expanded = selectedDropdown,
+                            onDismissRequest = { selectedDropdown = false }
                         ) {
                             lists.forEach { list ->
                                 CommonDropDownItem(text = list.title) {
-                                    selectedDropdown.value = false
-                                    selectedList.value = list.title
+                                    selectedDropdown = false
+                                    selectedList = list.title
                                 }
                             }
                         }
@@ -154,7 +153,7 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                             modifier = Modifier.padding(4.dp),
                             colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                             onClick = {
-                                selectedDropdown.value = true
+                                selectedDropdown = true
                             }
                         ) {
                             Icon(
@@ -169,7 +168,7 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                 }
 
                 Button(
-                    enabled = action != ManagementAction.ADD_TO_LIST || selectedList.value != null,
+                    enabled = action != ManagementAction.ADD_TO_LIST || selectedList != null,
                     modifier = Modifier.padding(4.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                     onClick = {
@@ -177,9 +176,9 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                             if (action == null)
                                 startListRefresh()
                             else
-                                startExecuteManagementAction(action, state.actionList, selectedList.value)
+                                startExecuteManagementAction(action, state.actionList, selectedList)
                         } finally {
-                            selectedList.value = null
+                            selectedList = null
                         }
                     }
                 ) {
@@ -191,7 +190,7 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
             }
 
             if (action == ManagementAction.ADD_TO_LIST) {
-                BannerRow("Selected list: ${selectedList.value ?: "Select list from dropdown"}")
+                BannerRow("Selected list: ${selectedList ?: "Select list from dropdown"}")
             }
         }
     }

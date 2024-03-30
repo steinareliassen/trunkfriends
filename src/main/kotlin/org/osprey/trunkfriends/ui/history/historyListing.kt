@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.ui.*
 import java.time.Instant
 import java.time.ZoneId
@@ -28,21 +27,33 @@ fun historyListing(
     zoomedName: String?,
     height: Int
 ) {
-    val history = HistoryData(state.getSelectedConfig())
-    var timeslotPage by remember { mutableStateOf(history.getTimeslots().distinct().size - 1) }
-    val page = remember { mutableStateOf(0) }
+    var timeslotPage by remember { mutableStateOf(state.history.getTimeslots().distinct().size - 1) }
+    var page by remember { mutableStateOf(0) }
+    var rowsByPage by remember { mutableStateOf(0) }
+
+    state.onServerChanged = {
+        timeslotPage = state.history.getTimeslots().distinct().size - 1
+        page = 0
+    }
 
     fun rows() =
         (height - 200) / 27
 
+    // If we have changed window height enough to change number of rows, reset page counter
+    // to avoid hitting a page that no longer exist.
+    if (rowsByPage != rows()) {
+        rowsByPage = rows()
+        page = 0
+    }
+
     fun nextTimeslot()  {
         timeslotPage++
-        page.value = 0
+        page = 0
     }
 
     fun previousTimeslot()  {
         timeslotPage--
-        page.value = 0
+        page = 0
     }
 
     fun timestampToDateString(timestamp: Long) =
@@ -65,7 +76,7 @@ fun historyListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (!history.isNotEmpty()) {
+        if (!state.history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -77,13 +88,13 @@ server with requests. Once followers are imported, you will see them here.
             )
         } else {
 
-            val timeslots = history.getTimeslots()
-            val historyDropdownState = remember { mutableStateOf(false) }
+            val timeslots = state.history.getTimeslots()
+            var historyDropdownState by remember { mutableStateOf(false) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                if (history.isNotEmpty() && zoomedName == null) {
+                if (state.history.isNotEmpty() && zoomedName == null) {
                     CommonIconButton(text = timestampToDateString(timeslots[timeslotPage]), icon = Icons.Default.MoreVert) {
-                        historyDropdownState.value = true
+                        historyDropdownState = true
                     }
                     if (timeslotPage > 0)
                         CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
@@ -102,16 +113,16 @@ server with requests. Once followers are imported, you will see them here.
             }
 
             DropdownMenu(
-                expanded = historyDropdownState.value,
-                onDismissRequest = { historyDropdownState.value = false }
+                expanded = historyDropdownState,
+                onDismissRequest = { historyDropdownState = false }
             ) {
 
                 timeslots.forEachIndexed { i, time ->
                     DropdownMenuItem(
                         onClick = {
                             timeslotPage = i
-                            page.value = 0
-                            historyDropdownState.value = false
+                            page = 0
+                            historyDropdownState = false
                         }
                     ) {
                         Text(timestampToDateString(time))
@@ -119,9 +130,9 @@ server with requests. Once followers are imported, you will see them here.
                 }
             }
 
-            history.createHistoryCards().filter {
+            state.history.createHistoryCards().filter {
                 ((zoomedName == null && timeslots[timeslotPage] == it.timeStamp) || zoomedName == it.acct)
-            }.chunked(if (zoomedName == null) rows() else rows()/2).apply {
+            }.chunked(if (zoomedName == null) rowsByPage else rowsByPage).apply {
                 Card(
                     elevation = Dp(2F),
                     modifier = Modifier
@@ -131,7 +142,7 @@ server with requests. Once followers are imported, you will see them here.
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                        drop(page.value).first().forEach { historyCard ->
+                        drop(page).first().forEach { historyCard ->
                             Row(modifier = Modifier.align(Alignment.Start)) {
                                 if (zoomedName != null) {
                                     Column {
@@ -150,12 +161,12 @@ server with requests. Once followers are imported, you will see them here.
                 }
 
                 Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    if (page.value > 0) CommonButton(text = "<< prev page") {
-                        page.value--
+                    if (page > 0) CommonButton(text = "<< prev page") {
+                        page--
                     }
-                    CommonButton(enabled = false, text = "${page.value + 1}/${size}") {}
-                    if (page.value < size - 1) CommonButton(text = "next page >>") {
-                        page.value++
+                    CommonButton(enabled = false, text = "${page + 1}/${size}") {}
+                    if (page < size - 1) CommonButton(text = "next page >>") {
+                        page++
                     }
                 }
             }

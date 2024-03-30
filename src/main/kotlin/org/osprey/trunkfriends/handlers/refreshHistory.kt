@@ -44,6 +44,7 @@ suspend fun refreshHistory(selectedConfig : Pair<String, Config>, isCancelled : 
         feedbackFunction("Imported lines : $newLines\n\n")
         delay(5000L)
     } catch (e : InterruptedException) {
+        println("nope")
         return
     } catch (e : Exception) {
         feedbackFunction("Error during fetch, list not updated\n\n" +
