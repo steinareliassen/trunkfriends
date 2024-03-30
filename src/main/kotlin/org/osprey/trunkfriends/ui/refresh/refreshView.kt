@@ -55,7 +55,6 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
     fun runBackgroundTask(returnView: View, task : () -> Unit) {
         if (state.networkTaskActive) return
         state.networkTaskActive = true
-        println("Executing task")
         task()
         state.networkTaskActive = false
         state.view = returnView
