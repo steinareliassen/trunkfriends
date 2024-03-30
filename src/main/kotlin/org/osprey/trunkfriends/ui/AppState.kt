@@ -3,11 +3,15 @@ package org.osprey.trunkfriends.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.WindowState
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.ui.history.HistoryViewState
 
-class AppState(var configMap: MutableList<Pair<String, Config>>) {
+class AppState(
+    val configMap: MutableList<Pair<String, Config>>,
+    val windowState: WindowState
+) {
     var selectedConfig by mutableStateOf<Pair<String, Config>?>(null)
 
     var zoomedName by mutableStateOf<String?>(null)
@@ -24,7 +28,7 @@ class AppState(var configMap: MutableList<Pair<String, Config>>) {
 
     var networkTaskActive by mutableStateOf(false)
 
-    var historyViewState = HistoryViewState()
+    val historyViewState = HistoryViewState()
 
     fun getSelectedConfig() =
         selectedConfig?.first ?: "No Server"

@@ -11,11 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import org.apache.commons.io.FileUtils
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.authenticate.AuthState
@@ -31,7 +28,7 @@ import java.nio.file.Paths
 
 @Composable
 @Preview
-fun App(state: AppState, wstate: WindowState) {
+fun App(state: AppState) {
 
     Column(Modifier.background(colorBackground).fillMaxHeight()) {
 
@@ -42,12 +39,12 @@ fun App(state: AppState, wstate: WindowState) {
                 state.historyViewState,
                 state,
                 state.zoomedName,
-                wstate.size.height.value.toInt()
+                state.windowState.size.height.value.toInt()
             )
             View.LIST -> overviewListing(
                 state.historyViewState,
                 state,
-                wstate.size.height.value.toInt()
+                state.windowState.size.height.value.toInt()
             )
             View.MANAGE -> managementView(state)
             View.ABOUT -> aboutView()
@@ -212,17 +209,9 @@ fun main() = application {
         title = "Trunk Friends",
         state = state,
     ) {
-        LaunchedEffect(state) {
-            snapshotFlow { state.size }
-                .onEach(::onWindowResize)
-                .launchIn(this)
-        }
-        window.minimumSize = Dimension(800, 600)
         window.maximumSize = Dimension(850, 2000)
-        App(remember { AppState(configMap) }, state)
+        window.minimumSize = Dimension(800, 600)
+        App(remember { AppState(configMap,state) })
     }
 }
 
-// https://github.com/JetBrains/compose-multiplatform/tree/master/tutorials/Window_API_new
-private fun onWindowResize(size: DpSize) {
-}
