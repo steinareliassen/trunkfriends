@@ -16,13 +16,13 @@ class HistoryData(
         val file = File("$path/datafile.dmp")
         if (file.exists()) {
             file.readLines().forEach {
-                val stra = it.substring(0, it.indexOf("-") + 3)
-                val strb = it.substring(it.indexOf("-") + 3, it.length)
+                val timeAndStatusString = it.substring(0, it.indexOf("-") + 3)
+                val userObject = it.substring(it.indexOf("-") + 3, it.length)
                 val user = mapper.readValue(
-                    strb,
+                    userObject,
                     CurrentUser::class.java
                 )
-                history.add(Pair(user, stra))
+                history.add(Pair(user, timeAndStatusString))
             }
         }
     }
