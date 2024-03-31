@@ -121,7 +121,6 @@ class MastodonApi(
             sleepAndCheck(isCancelled)
             start = list.second
         } while (start != 0L)
-
         return follow
     }
 

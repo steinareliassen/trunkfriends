@@ -33,7 +33,7 @@ class AppState(
     fun getSelectedConfig() =
         selectedConfig?.first ?: "No Server"
 
-    var onServerChanged: (() -> Unit) = {}
+    var onServerChanged: () -> Unit = {}
 
     fun onServerSelect(selectView: View, setConfig: Pair<String, Config>?) {
         selectedConfig = setConfig
@@ -43,12 +43,15 @@ class AppState(
         onServerChanged()
     }
 
+    var onZoomOut: () -> Unit = {}
+
     val changeZoom = { name: String?, oldView: View ->
         zoomedName = name
         if (zoomedName != null) {
             returnView = oldView
             view = View.HISTORY
         } else {
+            onZoomOut()
             view = returnView
         }
     }

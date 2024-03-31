@@ -31,9 +31,19 @@ fun historyListing(
     var page by remember { mutableStateOf(0) }
     var rowsByPage by remember { mutableStateOf(0) }
 
+    // On server change, we need to refresh so that we end up on the right (last) page in new history
     state.onServerChanged = {
         timeslotPage = state.history.getTimeslots().distinct().size - 1
         page = 0
+    }
+
+    // Do not overwrite zoom out function if we are in a zoomed in view.
+    if (zoomedName == null) {
+        // On return back from zooming in on a user, we need to reset back to where we were.
+        state.onZoomOut = {
+            page = historyState.returnPage
+            timeslotPage = historyState.returnTimeslot
+        }
     }
 
     fun rows() =
@@ -64,11 +74,7 @@ fun historyListing(
                 this.substring(0..this.length - 4).replace("T", " ")
             }
 
-    if (historyState.resetHistoryPage(zoomedName)) {
-        timeslotPage = historyState.returnTimeslot
-        state.changeZoom(null, state.returnView)
-        return
-    }
+    //if (historyState.requireRefresh()) return
 
     Column(
         modifier = Modifier
@@ -152,7 +158,9 @@ server with requests. Once followers are imported, you will see them here.
                                 } else {
                                     followCard(historyCard, state.pasteBag, View.HISTORY) { name, view ->
                                         state.changeZoom(name, view)
-                                        historyState.storeHistoryPage(timeslotPage)
+                                        historyState.storeHistoryPage(page, timeslotPage)
+                                        page = 0
+                                        timeslotPage = 0
                                     }
                                 }
                             }

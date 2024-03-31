@@ -76,6 +76,17 @@ fun overviewListing(
     var page by remember { mutableStateOf(0) }
     var rowsByPage by remember { mutableStateOf(0) }
 
+    // On return back from zooming in on a user, we need to reset back to where we were.
+    state.onZoomOut = {
+        historyState.overviewReset = true
+    }
+
+    if (historyState.overviewReset) {
+        page = historyState.returnPage
+        rowsByPage = rows()
+        historyState.overviewReset = false
+    }
+
     // If we have changed window height enough to change number of rows, reset page counter
     // to avoid hitting a page that no longer exist.
     if (rowsByPage != rows()) {

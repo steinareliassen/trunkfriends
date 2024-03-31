@@ -1,7 +1,10 @@
 package org.osprey.trunkfriends.ui.refresh
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
@@ -52,16 +55,14 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
         feedback = param
     }
 
-    fun runBackgroundTask(returnView: View, task : () -> Unit) {
+    fun runBackgroundTask(task : () -> Unit) {
         if (state.networkTaskActive) return
         state.networkTaskActive = true
         task()
-        state.networkTaskActive = false
-        state.view = returnView
     }
 
     fun startListRefresh() {
-        runBackgroundTask(View.REFRESH) {
+        runBackgroundTask {
             coroutineScope.launch {
                 refreshHistory(
                     state.selectedConfig
@@ -69,12 +70,17 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                     { !state.networkTaskActive },
                     feedbackFunction
                 )
+                // We are done with network task, enable UI again
+                state.networkTaskActive = false
+
+                // We need to refresh the history object, do so by issuing a server select.
+                state.onServerSelect(View.HISTORY, state.selectedConfig)
             }
         }
     }
 
     fun startExecuteManagementAction(action: ManagementAction, accounts: List<String>, list: String? = null) {
-        runBackgroundTask(View.MANAGE) {
+        runBackgroundTask {
             coroutineScope.launch {
                 managementAction(
                     accounts,
@@ -171,6 +177,7 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                     modifier = Modifier.padding(4.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
                     onClick = {
+                        feedbackFunction("Initializing...")
                         try {
                             if (action == null)
                                 startListRefresh()

@@ -79,7 +79,7 @@ fun ButtonRowHeader(state: AppState) {
             CommonButton(
                 text = "Clear search"
             ) {
-                state.zoomedName = null
+                state.changeZoom(null, state.returnView)
             }
         }
         return
