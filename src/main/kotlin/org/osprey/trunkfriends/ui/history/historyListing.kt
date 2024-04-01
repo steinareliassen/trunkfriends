@@ -7,18 +7,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.osprey.trunkfriends.historyhandler.HistoryHandler
-import org.osprey.trunkfriends.ui.BannerRow
-import org.osprey.trunkfriends.ui.CommonButton
-import org.osprey.trunkfriends.ui.CommonIconButton
-import org.osprey.trunkfriends.ui.View
+import org.osprey.trunkfriends.ui.*
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -27,10 +23,49 @@ import java.util.*
 @Composable
 fun historyListing(
     historyState: HistoryViewState,
-    serverUser: String,
+    state: AppState,
     zoomedName: String?,
-    onNameChange: (String?, View) -> Unit
+    height: Int
 ) {
+    var timeslotPage by remember { mutableStateOf(state.history.getTimeslots().distinct().size - 1) }
+    var page by remember { mutableStateOf(0) }
+    var rowsByPage by remember { mutableStateOf(0) }
+
+    // On server change, we need to refresh so that we end up on the right (last) page in new history
+    state.onServerChanged = {
+        timeslotPage = state.history.getTimeslots().distinct().size - 1
+        page = 0
+    }
+
+    // Do not overwrite zoom out function if we are in a zoomed in view.
+    if (zoomedName == null) {
+        // On return back from zooming in on a user, we need to reset back to where we were.
+        state.onZoomOut = {
+            page = historyState.returnPage
+            timeslotPage = historyState.returnTimeslot
+        }
+    }
+
+    fun rows() =
+        (height - 200) / 27
+
+    // If we have changed window height enough to change number of rows, reset page counter
+    // to avoid hitting a page that no longer exist.
+    if (rowsByPage != rows()) {
+        rowsByPage = rows()
+        page = 0
+    }
+
+    fun nextTimeslot()  {
+        timeslotPage++
+        page = 0
+    }
+
+    fun previousTimeslot()  {
+        timeslotPage--
+        page = 0
+    }
+
     fun timestampToDateString(timestamp: Long) =
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
             .withLocale(Locale.GERMAN)
@@ -39,24 +74,7 @@ fun historyListing(
                 this.substring(0..this.length - 4).replace("T", " ")
             }
 
-    if (historyState.resetHistoryPage(zoomedName)) {
-        onNameChange(null, historyState.returnView)
-        return
-    }
-
-    val history = HistoryHandler().readHistory(serverUser)
-
-    // Did we just get to history view from another view? If so, calculate the time of the
-    // last page, and return, so UI can refresh to that page.
-    if (history.isNotEmpty() && historyState.time == 0L) {
-        historyState.time = history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.max()
-        historyState.timeslotPage = history.map { (_, control) ->
-            control.substring(0, control.length - 3).toLong()
-        }.distinct().size - 1
-        return
-    }
+    //if (historyState.requireRefresh()) return
 
     Column(
         modifier = Modifier
@@ -64,7 +82,7 @@ fun historyListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (history.isEmpty()) {
+        if (!state.history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -76,43 +94,41 @@ server with requests. Once followers are imported, you will see them here.
             )
         } else {
 
-            val timeslots = history.map { (_, control) ->
-                control.substring(0, control.length - 3).toLong()
-            }.distinct()
+            val timeslots = state.history.getTimeslots()
+            var historyDropdownState by remember { mutableStateOf(false) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
-                if (history.isNotEmpty() && zoomedName == null) {
-                    CommonIconButton(text = timestampToDateString(historyState.time), icon = Icons.Default.MoreVert) {
-                        historyState.historyDropdownState = true
+                if (state.history.isNotEmpty() && zoomedName == null) {
+                    CommonIconButton(text = timestampToDateString(timeslots[timeslotPage]), icon = Icons.Default.MoreVert) {
+                        historyDropdownState = true
                     }
-                    if (historyState.timeslotPage > 0)
+                    if (timeslotPage > 0)
                         CommonIconButton(text = "Previous timeslot", icon = Icons.Default.ArrowBack) {
-                            historyState.time = timeslots[historyState.previousTimeslot()]
+                            previousTimeslot()
                         }
-                    CommonButton(enabled = false, text = "${historyState.timeslotPage + 1}/${timeslots.size}") {}
-                    if (historyState.timeslotPage < timeslots.size - 1)
+                    CommonButton(enabled = false, text = "${timeslotPage + 1}/${timeslots.size}") {}
+                    if (timeslotPage < timeslots.size - 1)
                         CommonIconButton(
                             text = "Next timeslot",
                             icon = Icons.Default.ArrowForward,
                             iconBefore = false
                         ) {
-                            historyState.time = timeslots[historyState.nextTimeslot()]
+                            nextTimeslot()
                         }
                 }
             }
 
             DropdownMenu(
-                expanded = historyState.historyDropdownState,
-                onDismissRequest = { historyState.historyDropdownState = false }
+                expanded = historyDropdownState,
+                onDismissRequest = { historyDropdownState = false }
             ) {
 
                 timeslots.forEachIndexed { i, time ->
                     DropdownMenuItem(
                         onClick = {
-                            historyState.time = time
-                            historyState.timeslotPage = i
-                            historyState.page = 0
-                            historyState.historyDropdownState = false
+                            timeslotPage = i
+                            page = 0
+                            historyDropdownState = false
                         }
                     ) {
                         Text(timestampToDateString(time))
@@ -120,9 +136,9 @@ server with requests. Once followers are imported, you will see them here.
                 }
             }
 
-            HistoryHandler().createHistoryCards(history).filter {
-                ((zoomedName == null && historyState.time == it.timeStamp) || zoomedName == it.acct)
-            }.chunked(if (zoomedName == null) 14 else 8).apply {
+            state.history.createHistoryCards().filter {
+                ((zoomedName == null && timeslots[timeslotPage] == it.timeStamp) || zoomedName == it.acct)
+            }.chunked(if (zoomedName == null) rowsByPage else rowsByPage).apply {
                 Card(
                     elevation = Dp(2F),
                     modifier = Modifier
@@ -132,17 +148,19 @@ server with requests. Once followers are imported, you will see them here.
                         .align(Alignment.CenterHorizontally)
                 ) {
                     Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                        drop(historyState.page).first().forEach { historyCard ->
+                        drop(page).first().forEach { historyCard ->
                             Row(modifier = Modifier.align(Alignment.Start)) {
                                 if (zoomedName != null) {
                                     Column {
                                         Text("⏰ ${timestampToDateString(historyCard.timeStamp)}")
-                                        followCard(historyCard, historyState, View.HISTORY)
+                                        followCard(historyCard, state.pasteBag, View.HISTORY)
                                     }
                                 } else {
-                                    followCard(historyCard, historyState, View.HISTORY) { name, view ->
-                                        onNameChange(name, view)
-                                        historyState.storeHistoryPage()
+                                    followCard(historyCard, state.pasteBag, View.HISTORY) { name, view ->
+                                        state.changeZoom(name, view)
+                                        historyState.storeHistoryPage(page, timeslotPage)
+                                        page = 0
+                                        timeslotPage = 0
                                     }
                                 }
                             }
@@ -151,12 +169,12 @@ server with requests. Once followers are imported, you will see them here.
                 }
 
                 Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                    if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                        historyState.page--
+                    if (page > 0) CommonButton(text = "<< prev page") {
+                        page--
                     }
-                    CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                    if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                        historyState.page++
+                    CommonButton(enabled = false, text = "${page + 1}/${size}") {}
+                    if (page < size - 1) CommonButton(text = "next page >>") {
+                        page++
                     }
                 }
             }
@@ -182,7 +200,7 @@ fun zoomButton(text: String, onClick: () -> Unit) {
 @Composable
 fun followCard(
     historyCard: HistoryCard,
-    historyState: HistoryViewState,
+    pasteBag: PasteBag,
     view: View,
     onNameChange: ((String?, View) -> Unit)? = null
 ) {
@@ -239,12 +257,12 @@ fun followCard(
                 }
                 Column {
                     Checkbox(
-                        checked = historyState.pasteBag.contains(acct),
+                        checked = pasteBag.contains(acct),
                         onCheckedChange = {
-                            if (historyState.pasteBag.contains(acct)) {
-                                historyState.pasteBag.remove(acct)
+                            if (pasteBag.contains(acct)) {
+                                pasteBag.remove(acct)
                             } else {
-                                historyState.pasteBag.add(acct)
+                                pasteBag.add(acct)
                             }
                         }
                     )

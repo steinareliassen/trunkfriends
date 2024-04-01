@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,8 +18,9 @@ import androidx.compose.ui.unit.dp
 
 
 @Composable
-fun addRemoveView(state: UIState) {
-    val text = rememberSaveable { mutableStateOf("") }
+fun managementView(state: AppState) {
+    var text by remember { mutableStateOf("") }
+
     Text("\n")
 
     Row(
@@ -32,6 +31,7 @@ fun addRemoveView(state: UIState) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
+
             Text(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 text = "Enter accounts below, one per line, separated only by newline (no comma, etc)\n",
@@ -39,8 +39,8 @@ fun addRemoveView(state: UIState) {
             )
 
             TextField(
-                value = text.value,
-                onValueChange = { text.value = it }, modifier = Modifier
+                value = text,
+                onValueChange = { text = it }, modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
                     .padding(10.dp)
@@ -61,31 +61,32 @@ fun addRemoveView(state: UIState) {
                 .align(Alignment.CenterHorizontally)
         ) {
             CommonButton(
-                enabled = state.historyViewState.pasteBag.isNotEmpty(),
+                enabled = state.pasteBag.isNotEmpty(),
                 text = "Insert from bag"
             ) {
-                text.value = state.historyViewState.pasteBag.reduce { acc, s -> "$acc\n$s" }
+                text = state.pasteBag.getSelected()
             }
+
             val managementCommand = { context : ManagementAction ->
                 state.view = View.EXECUTE_MANAGEMENT
-                state.context = context
-                state.actionList = text.value.split("\n").filter { it.isNotBlank() }.map { it.trim() }
+                state.managementAction = context
+                state.actionList = text.split("\n").filter { it.isNotBlank() }.map { it.trim() }
             }
 
             CommonButton(
-                enabled = text.value.isNotBlank(),
+                enabled = text.isNotBlank(),
                 text = "Unfollow selected"
             ) {
                 managementCommand(ManagementAction.UNFOLLOW)
             }
             CommonButton(
-                enabled = text.value.isNotBlank(),
+                enabled = text.isNotBlank(),
                 text = "Follow selected"
             ) {
                 managementCommand(ManagementAction.FOLLOW)
             }
             CommonButton(
-                enabled = text.value.isNotBlank(),
+                enabled = text.isNotBlank(),
                 text = "Add to list"
             ) {
                 managementCommand(ManagementAction.ADD_TO_LIST)

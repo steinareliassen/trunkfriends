@@ -1,60 +1,67 @@
-package org.osprey.trunkfriends.historyhandler
+package org.osprey.trunkfriends.dal
 
 import org.apache.commons.io.FileUtils
-import org.osprey.trunkfriends.api.CurrentUser
+import org.osprey.trunkfriends.api.dto.CurrentUser
+import org.osprey.trunkfriends.ui.CompareUser
 import org.osprey.trunkfriends.ui.history.HistoryCard
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
 
-class HistoryHandler {
+class HistoryData(
+    private val configPath: String
+) {
 
-    fun readHistory(configPath: String): List<Pair<CurrentUser, String>> {
-        val history = mutableListOf<Pair<CurrentUser, String>>()
-
+    private val history  = mutableListOf<Pair<CurrentUser, String>>().also { history ->
         val path = FileUtils.getUserDirectoryPath() + "/.trunkfriends/$configPath"
         val file = File("$path/datafile.dmp")
         if (file.exists()) {
             file.readLines().forEach {
-                val stra = it.substring(0, it.indexOf("-") + 3)
-                val strb = it.substring(it.indexOf("-") + 3, it.length)
+                val timeAndStatusString = it.substring(0, it.indexOf("-") + 3)
+                val userObject = it.substring(it.indexOf("-") + 3, it.length)
                 val user = mapper.readValue(
-                    strb,
+                    userObject,
                     CurrentUser::class.java
                 )
-                history.add(Pair(user, stra))
+                history.add(Pair(user, timeAndStatusString))
             }
         }
-        return history
     }
 
-    fun createListCards(history: List<CurrentUser>) =
-        history.let {
-            it.map { user ->
-                with(user) {
-                   HistoryCard(
-                        follower = follower,
-                        prevFollower = follower,
-                        following = following,
-                        prevFollowing = following,
-                        acct = acct,
-                        username = username,
-                        timeStamp = 0L
-                    )
+    fun isNotEmpty() = history.isNotEmpty()
+
+    fun getTimeslots() = history.map { (_, control) ->
+        control.substring(0, control.length - 3).toLong()
+    }.distinct()
+
+    fun createListCards(compareUser: CompareUser) =
+        history.associate { it.first.acct to it.first }.map { it.value }
+            .sortedWith(compareUser).let {
+                it.map { user ->
+                    with(user) {
+                        HistoryCard(
+                            follower = follower,
+                            prevFollower = follower,
+                            following = following,
+                            prevFollowing = following,
+                            acct = acct,
+                            username = username,
+                            timeStamp = 0L
+                        )
+                    }
                 }
             }
-        }
 
-    fun createHistoryCards(history: List<Pair<CurrentUser, String>>) =
+    fun createHistoryCards() =
         history.let {
             val previousUserMap = mutableMapOf<String, CurrentUser>()
             it.map { user ->
                 with(user) {
-                    previousUserMap[first.acct]?.let {
+                    previousUserMap[first.acct]?.let { currentUser ->
                         HistoryCard(
                             follower = first.follower,
-                            prevFollower = it.follower,
+                            prevFollower = currentUser.follower,
                             following = first.following,
-                            prevFollowing = it.following,
+                            prevFollowing = currentUser.following,
                             acct = first.acct,
                             username = first.username,
                             timeStamp = second.substring(0, second.length - 3).toLong()
@@ -76,11 +83,23 @@ class HistoryHandler {
             }
         }
 
+    fun writeHistory(currentUsers: Map<String, CurrentUser>) =
+        createNewHistory(currentUsers).let { newHistory ->
+            val historyLines = history + newHistory
+            val path = FileUtils.getUserDirectoryPath() + "/.trunkfriends/$configPath"
+            File("$path/datafile.dmp").renameTo(File("$path/datafile.dmp.${System.currentTimeMillis()}"))
+            File("$path/datafile.dmp").printWriter().use { pw ->
+                historyLines.forEach {
+                    pw.println(it.second + mapper.writeValueAsString(it.first))
+                }
+            }
+            newHistory.size
+        }
 
-    fun createNewHistory(
-        latestHistory: Map<String, CurrentUser>,
+    private fun createNewHistory(
         currentUsers: Map<String, CurrentUser>
     ): List<Pair<CurrentUser, String>> {
+        val latestHistory = extractPreviousRun()
         val timestamp = System.currentTimeMillis()
         val newHistoryLines = mutableListOf<Pair<CurrentUser, String>>()
 
@@ -122,19 +141,9 @@ class HistoryHandler {
         return newHistoryLines
     }
 
-    fun extractPreviousRunFromHistory(history: List<Pair<CurrentUser, String>>): Map<String, CurrentUser> =
+    private fun extractPreviousRun(): Map<String, CurrentUser> =
         history.associate {
             it.first.acct to it.first
         }
-
-    fun writeHistory(configPath : String, historyLines: List<Pair<CurrentUser, String>>) {
-        val path = FileUtils.getUserDirectoryPath() + "/.trunkfriends/$configPath"
-        File("$path/datafile.dmp").renameTo(File("$path/datafile.dmp.${System.currentTimeMillis()}"))
-        File("$path/datafile.dmp").printWriter().use { pw ->
-            historyLines.forEach {
-                pw.println(it.second + mapper.writeValueAsString(it.first))
-            }
-        }
-    }
 
 }

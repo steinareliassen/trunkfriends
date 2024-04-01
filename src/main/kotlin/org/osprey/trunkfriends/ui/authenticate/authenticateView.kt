@@ -14,7 +14,7 @@ import org.osprey.trunkfriends.api.mastodon.MastodonAuthApi
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.BannerRow
 import org.osprey.trunkfriends.ui.CommonButton
-import org.osprey.trunkfriends.ui.UIState
+import org.osprey.trunkfriends.ui.AppState
 import org.osprey.trunkfriends.ui.View
 import org.osprey.trunkfriends.util.mapper
 import java.io.File
@@ -22,7 +22,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 @Composable
-fun authenticateView(state: AuthState, uiState: UIState) {
+fun authenticateView(state: AuthState, uiState: AppState) {
 
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
     val api = MastodonAuthApi()
@@ -181,7 +181,7 @@ on this account.
 
                     val configKey = "${state.domain}/${userClass.acct}"
                     val configPath = FileUtils.getUserDirectoryPath() +
-                            "/.trunkfriends/$configKey";
+                            "/.trunkfriends/$configKey"
                     val userPath = Paths.get(configPath)
 
                     if (!Files.exists(userPath)) {

@@ -1,6 +1,8 @@
 package org.osprey.trunkfriends.api.mastodon
 
-import org.osprey.trunkfriends.api.*
+import org.osprey.trunkfriends.api.dto.ClientInfo
+import org.osprey.trunkfriends.api.dto.TokenInfo
+import org.osprey.trunkfriends.api.dto.UserClass
 import org.osprey.trunkfriends.util.mapper
 import java.net.URI
 import java.net.URLEncoder

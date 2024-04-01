@@ -1,9 +1,11 @@
 package org.osprey.trunkfriends.api.mastodon
 
 import org.osprey.trunkfriends.api.*
+import org.osprey.trunkfriends.api.dto.FollowStatus
+import org.osprey.trunkfriends.api.dto.ListClass
+import org.osprey.trunkfriends.api.dto.UserClass
 import org.osprey.trunkfriends.config.Config
-import org.osprey.trunkfriends.historyhandler.*
-import org.osprey.trunkfriends.managementhandler.sleepAndCheck
+import org.osprey.trunkfriends.handlers.sleepAndCheck
 import org.osprey.trunkfriends.util.mapper
 import java.io.IOException
 import java.net.URI
@@ -106,51 +108,23 @@ class MastodonApi(
 
     override suspend fun getFollow(
         userId: String,
-        direction: String,
+        direction: Direction,
         isCancelled : () -> Boolean,
-        funk: (String) -> Unit
+        feedbackFunction: (String) -> Unit
     ) : List<UserClass> {
-        var followCount = 0
-        funk("$direction fetched: $followCount")
+        var start = 0L
         val follow = mutableListOf<UserClass>()
-        var list = findUserPage(0, userId, direction)
-        follow.addAll(list.first)
-        while (list.second != 0L) {
-            followCount += 40
-            funk("$direction fetched: $followCount")
-            sleepAndCheck(isCancelled)
-            list = findUserPage(list.second, userId, direction)
+        do {
+            val list = findUserPage(start, userId, direction)
             follow.addAll(list.first)
-            if (isCancelled()) throw InterruptedException()
-        }
+            feedbackFunction("$direction fetched: ${follow.size}")
+            sleepAndCheck(isCancelled)
+            start = list.second
+        } while (start != 0L)
         return follow
     }
 
-    override fun getCurrentUsers(following : List<UserClass>, followers : List<UserClass>) : Map<String, CurrentUser> {
-
-        val currentUsers = mutableMapOf<String, CurrentUser>()
-
-        followers.forEach {
-            currentUsers[it.acct] =
-                CurrentUser(following = false, follower = true, it.acct, it.username)
-        }
-
-        following.forEach {
-            if (currentUsers.containsKey(it.acct)) {
-                currentUsers[it.acct] = currentUsers[it.acct]?.copy(
-                    following = true
-                ) ?: throw IllegalStateException("nope")
-            } else {
-                currentUsers[it.acct] =
-                    CurrentUser(following = true, follower = false, it.acct, it.username
-                )
-            }
-        }
-
-        return currentUsers
-    }
-
-    private fun findUserPage(start: Long, id: String, direction: String): Pair<Array<UserClass>, Long> {
+    private fun findUserPage(start: Long, id: String, direction: Direction): Pair<Array<UserClass>, Long> {
         val startPoint = if (start != 0L) "?max_id=$start" else ""
         val uri = "https://${config.server}/api/v1/accounts/${id}/$direction$startPoint"
         val request = HttpRequest.newBuilder()

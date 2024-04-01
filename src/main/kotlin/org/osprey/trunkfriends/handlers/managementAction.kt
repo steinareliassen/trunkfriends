@@ -1,8 +1,8 @@
-package org.osprey.trunkfriends.managementhandler
+package org.osprey.trunkfriends.handlers
 
-import kotlinx.coroutines.delay
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.ui.ManagementAction
+import org.osprey.trunkfriends.util.extractError
 
 suspend fun managementAction(
     accounts: List<String>,
@@ -35,7 +35,7 @@ suspend fun managementAction(
         feedbackFunction(
 """Error, action not applied to all accounts
     
-Error: ${e.message}
+Error: ${extractError(e.message)}
 
 You might need to obtain a new token. Older Trunkfriends tokens were
 read-only tokens, and did not support actions like managing followers.
@@ -46,11 +46,4 @@ You can select "Obtain new token" in the menu and retry.
         }
     }
 
-}
-
-suspend fun sleepAndCheck(isCancelled : () -> Boolean) {
-    (1..15).forEach {
-        delay(100)
-        if (isCancelled()) throw InterruptedException()
-    }
 }

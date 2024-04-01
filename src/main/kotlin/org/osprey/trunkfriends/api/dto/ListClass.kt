@@ -1,4 +1,4 @@
-package org.osprey.trunkfriends.api
+package org.osprey.trunkfriends.api.dto
 
 data class ListClass(
     val id: String,

@@ -6,16 +6,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.osprey.trunkfriends.api.CurrentUser
-import org.osprey.trunkfriends.historyhandler.HistoryHandler
+import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.ui.history.followCard
 import java.util.*
 import kotlin.Comparator
@@ -66,16 +63,36 @@ class CompareUser(
 @Composable
 fun overviewListing(
     historyState: HistoryViewState,
-    serverUser: String,
-    onNameChange: (String?, View) -> Unit
+    state: AppState,
+    height: Int
 ) {
-    val sortDropDown = remember { mutableStateOf(false) }
-    val sortState = remember { mutableStateOf(SortStyle.ACCOUNT) }
-    val searchText = remember { mutableStateOf<String?>(null) }
+    fun rows() =
+        (height - 200) / 27
 
-    // Create a list of accounts from history-map, keeping the latest account follow / following status
-    val list = HistoryHandler().readHistory(serverUser).associate { it.first.acct to it.first }.map { it.value }
-        .sortedWith(CompareUser(serverUser.split("/")[0], sortState.value))
+    var sortDropDownExpanded by remember { mutableStateOf(false) }
+    var sortState by remember { mutableStateOf(SortStyle.ACCOUNT) }
+    var searchText by remember { mutableStateOf("") }
+
+    var page by remember { mutableStateOf(0) }
+    var rowsByPage by remember { mutableStateOf(0) }
+
+    // On return back from zooming in on a user, we need to reset back to where we were.
+    state.onZoomOut = {
+        historyState.overviewReset = true
+    }
+
+    if (historyState.overviewReset) {
+        page = historyState.returnPage
+        rowsByPage = rows()
+        historyState.overviewReset = false
+    }
+
+    // If we have changed window height enough to change number of rows, reset page counter
+    // to avoid hitting a page that no longer exist.
+    if (rowsByPage != rows()) {
+        rowsByPage = rows()
+        page = 0
+    }
 
     Column(
         modifier = Modifier
@@ -83,7 +100,7 @@ fun overviewListing(
             .verticalScroll(rememberScrollState())
     ) {
 
-        if (list.isEmpty()) {
+        if (!state.history.isNotEmpty()) {
             Text("\n")
             BannerRow(
                 """
@@ -94,34 +111,35 @@ server with requests. Once followers are imported, you will see them here.
             """.trimIndent(), 16f
             )
         } else {
+            var searchTextFieldText by remember { mutableStateOf<String?>(null) }
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 TextField(
                     singleLine = true,
                     modifier = Modifier.width(500.dp),
-                    enabled = searchText.value == null,
-                    value = historyState.searchText,
+                    enabled = searchTextFieldText == null,
+                    value = searchText,
                     onValueChange = {
-                        historyState.searchText = it
+                        searchText = it
                     },
                     label = { Text("Text to search for") }
                 )
                 CommonButton(
-                    enabled = historyState.searchText.isNotBlank(),
-                    text = if (searchText.value == null) "Search" else "Clear"
+                    enabled = searchText.isNotBlank(),
+                    text = if (searchTextFieldText == null) "Search" else "Clear"
                 ) {
-                    historyState.page = 0
-                    if (searchText.value != null) {
-                        searchText.value = null
-                        historyState.searchText = ""
-                    } else searchText.value = historyState.searchText
+                    page = 0
+                    if (searchTextFieldText != null) {
+                        searchTextFieldText = null
+                        searchText = ""
+                    } else searchTextFieldText = searchText
                 }
                 Box {
                     Button(
                         enabled = true,
                         modifier = Modifier.padding(4.dp),
                         colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
-                        onClick = { sortDropDown.value = true }
+                        onClick = { sortDropDownExpanded = true }
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowDropDown,
@@ -131,58 +149,57 @@ server with requests. Once followers are imported, you will see them here.
                     }
 
                     DropdownMenu(
-                        expanded = sortDropDown.value,
-                        onDismissRequest = { sortDropDown.value = false }
+                        expanded = sortDropDownExpanded,
+                        onDismissRequest = { sortDropDownExpanded = false }
                     ) {
-                        SortStyle.values().forEach {
+                        SortStyle.entries.forEach {
                             CommonDropDownItem(text = it.text) {
-                                sortState.value = SortStyle.valueOf(it.name)
-                                sortDropDown.value = false
+                                sortState = SortStyle.valueOf(it.name)
+                                sortDropDownExpanded = false
                             }
                         }
                     }
                 }
             }
 
-            HistoryHandler().createListCards(list).filter {
-                searchText.value == null || it.acct.lowercase(Locale.getDefault())
-                    .contains(searchText.value?.lowercase(Locale.getDefault()) ?: "")
+            state.history.createListCards(
+                CompareUser(state.getSelectedConfig().split("/")[0], sortState)
+            ).filter {
+                searchTextFieldText == null || it.acct.lowercase(Locale.getDefault())
+                    .contains(searchTextFieldText?.lowercase(Locale.getDefault()) ?: "")
             }.takeIf { it.isNotEmpty() }.let {
-                if (it != null) {
-                    it.chunked(14).apply {
-                        Card(
-                            elevation = Dp(2F),
-                            modifier = Modifier
-                                .width(740.dp)
-                                .wrapContentHeight()
-                                .padding(2.dp)
-                                .align(Alignment.CenterHorizontally)
-                        ) {
-                            Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
-                                drop(historyState.page).first().forEach { historyCard ->
-                                    Row(modifier = Modifier.align(Alignment.Start)) {
-                                        followCard(historyCard, historyState, View.LIST) { name, view ->
-                                            onNameChange(name, view)
-                                            historyState.storeHistoryPage()
-                                        }
+                it?.chunked(rows())?.apply {
+                    Card(
+                        elevation = Dp(2F),
+                        modifier = Modifier
+                            .width(740.dp)
+                            .wrapContentHeight()
+                            .padding(2.dp)
+                            .align(Alignment.CenterHorizontally)
+                    ) {
+                        Column(modifier = Modifier.background(Color(0xB3, 0xB4, 0x92, 0xFF))) {
+                            drop(page).first().forEach { historyCard ->
+                                Row(modifier = Modifier.align(Alignment.Start)) {
+                                    followCard(historyCard, state.pasteBag, View.LIST) { name, view ->
+                                        state.changeZoom(name, view)
+                                        historyState.storeHistoryPage(page)
                                     }
                                 }
                             }
                         }
+                    }
 
-                        Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            if (historyState.page > 0) CommonButton(text = "<< prev page") {
-                                historyState.page--
-                            }
-                            CommonButton(enabled = false, text = "${historyState.page + 1}/${size}") {}
-                            if (historyState.page < size - 1) CommonButton(text = "next page >>") {
-                                historyState.page++
-                            }
+                    Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        if (page > 0) CommonButton(text = "<< prev page") {
+                            page--
+                        }
+                        CommonButton(enabled = false, text = "${page + 1}/${size}") {}
+                        if (page < size - 1) CommonButton(text = "next page >>") {
+                            page++
                         }
                     }
-                } else {
-                    BannerRow("Search returned no results")
                 }
+                    ?: BannerRow("Search returned no results")
             }
         }
     }
