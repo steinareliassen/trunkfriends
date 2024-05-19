@@ -6,22 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-
-
-// #E0D3DE
-// #D8D0C1
-// #CBB8A9
-// #B3B492
-// #6F686D
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun CommonButton(enabled: Boolean = true, text: String, onClick: () -> Unit) =
@@ -81,6 +79,36 @@ fun BannerRow(
     }
 }
 
+@Composable
+fun AnnotatedBannerRow(
+    text: AnnotatedString,
+    size: Float = 20f
+) = Row(
+    modifier = Modifier
+        .border(width = 2.dp, color = colorTwo)
+        .background(colorOne).fillMaxWidth()
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val handler = LocalUriHandler.current
+        ClickableText(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            text = text,
+            onClick = { position ->
+                text.getStringAnnotations(position, position).firstOrNull()?.let {
+                    if (it.tag == "url") {
+                        handler.openUri(it.item.trim())
+                    }
+                }
+                println(position)
+            },
+            style = TextStyle(
+                fontSize = size.toInt().sp,
+            )
+        )
+    }
+}
 
 val palette1 = listOf(
     Color(0xE0,0xD3,0xDE),

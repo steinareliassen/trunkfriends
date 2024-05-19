@@ -14,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.osprey.trunkfriends.handlers.dto.BackupOptions
 import org.osprey.trunkfriends.handlers.managementAction
 import org.osprey.trunkfriends.handlers.refreshHistory
 import org.osprey.trunkfriends.ui.*
@@ -45,17 +48,18 @@ fun executeManagement(list: List<String>, action: ManagementAction) =
     you must refresh followers first.
                             """
 
+// Todo: Needs to be refactored to two views
 @Composable
-fun refreshView(state: AppState, action : ManagementAction? = null) {
+fun refreshView(state: AppState, action: ManagementAction? = null) {
 
     val coroutineScope = CoroutineScope(Dispatchers.Main)
     var feedback by remember { mutableStateOf("Refreshing") }
-
-    val feedbackFunction = { param : String ->
+    var backupPlan by remember { mutableStateOf(setOf<BackupOptions>()) }
+    val feedbackFunction = { param: String ->
         feedback = param
     }
 
-    fun runBackgroundTask(task : () -> Unit) {
+    fun runBackgroundTask(task: () -> Unit) {
         if (state.networkTaskActive) return
         state.networkTaskActive = true
         task()
@@ -67,6 +71,7 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
                 refreshHistory(
                     state.selectedConfig
                         ?: throw IllegalStateException("Should not be null"),
+                    backupPlan,
                     { !state.networkTaskActive },
                     feedbackFunction
                 )
@@ -112,6 +117,65 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
     }
     Text("\n")
 
+    if (action == null) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(1f)
+                .background(colorTwo)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                modifier = Modifier.align(Alignment.CenterVertically),
+                fontSize = TextUnit(20f, TextUnitType.Sp),
+                text = "Important:\nBacking up notes has restrictions due to Mastodon API\n" +
+                "limitations. Read Trunkfriends about page for info."
+            )
+        }
+        BackupOptions.entries.forEach { backupOption ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(1f)
+                    .background(colorOne)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Column {
+                    Checkbox(
+                        checked = backupPlan.contains(backupOption),
+                        onCheckedChange = {
+                            backupPlan = backupPlan.toMutableSet().apply {
+                                if (contains(backupOption)) {
+                                    remove(backupOption)
+                                    if (backupOption == BackupOptions.EVERYTHING) {
+                                        backupOption.getOptions().forEach {
+                                            key -> remove(key)
+                                        }
+                                    }
+                                } else {
+                                    add(backupOption)
+                                    if (backupOption == BackupOptions.EVERYTHING) {
+                                        backupOption.getOptions().forEach {
+                                                key -> add(key)
+                                        }
+                                    }
+                                }
+                            }.toSet()
+                        }
+                    )
+                }
+                Column (
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                ) {
+                    Text(
+                        if (backupOption == BackupOptions.EVERYTHING)
+                            backupOption.title
+                        else
+                            "Backup ${backupOption.title} (${backupOption.name}.csv)"
+                    )
+                }
+
+            }
+        }
+    }
     if (state.networkTaskActive) {
         Column(
             modifier = Modifier
@@ -156,7 +220,10 @@ fun refreshView(state: AppState, action : ManagementAction? = null) {
 
                         Button(
                             modifier = Modifier.padding(4.dp),
-                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.White, contentColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color.White,
+                                contentColor = Color.Black
+                            ),
                             onClick = {
                                 selectedDropdown = true
                             }

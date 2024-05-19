@@ -124,6 +124,24 @@ class MastodonApi(
         return follow
     }
 
+    private fun getUserRelationship(userIds : List<String>) {
+        val response = HttpClient
+            .newHttpClient()
+            .send(
+                HttpRequest.newBuilder()
+                    .uri(
+                        URI.create("https://${config.server}/api/v1/accounts/relationships?ids[]=" +
+                                userIds.reduce { acc, s -> "${acc}&id[]=${s}" }
+                        )
+                    )
+                    .header("Authorization", config.bearer)
+                    .method("GET", HttpRequest.BodyPublishers.noBody())
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            )
+        println(response.body())
+    }
+
     private fun findUserPage(start: Long, id: String, direction: Direction): Pair<Array<UserClass>, Long> {
         val startPoint = if (start != 0L) "?max_id=$start" else ""
         val uri = "https://${config.server}/api/v1/accounts/${id}/$direction$startPoint"
@@ -137,6 +155,8 @@ class MastodonApi(
 
         val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
+
+        getUserRelationship(users.map { id })
 
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")

@@ -5,10 +5,16 @@ import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.api.Direction
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.dal.HistoryData
+import org.osprey.trunkfriends.handlers.dto.BackupOptions
 import org.osprey.trunkfriends.util.extractError
 
-suspend fun refreshHistory(selectedConfig : Pair<String, Config>, isCancelled : () -> Boolean, feedbackFunction: (String) -> Unit) {
-    // Set up fetchers
+suspend fun refreshHistory
+            (selectedConfig : Pair<String, Config>,
+             backupPlan : Set<BackupOptions> ,
+             isCancelled : () -> Boolean,
+             feedbackFunction: (String) -> Unit
+) {
+
     try {
         val hostInterface = selectedConfig.second.hostInterface
 
@@ -32,7 +38,11 @@ suspend fun refreshHistory(selectedConfig : Pair<String, Config>, isCancelled : 
                 ) ?: throw IllegalStateException("Should not be possible")
             } else {
                 currentUsers[it.acct] =
-                    CurrentUser(following = true, follower = false, it.acct, it.username
+                    CurrentUser(
+                        following = true,
+                        follower = false,
+                        it.acct,
+                        it.username
                     )
             }
         }
