@@ -1,10 +1,9 @@
 package org.osprey.trunkfriends.handlers
 
 import kotlinx.coroutines.delay
-import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.api.Direction
+import org.osprey.trunkfriends.api.dto.CurrentUser
 import org.osprey.trunkfriends.config.Config
-import org.osprey.trunkfriends.dal.HistoryData
 import org.osprey.trunkfriends.handlers.dto.BackupOptions
 import org.osprey.trunkfriends.util.extractError
 
@@ -14,7 +13,6 @@ suspend fun refreshHistory
              isCancelled : () -> Boolean,
              feedbackFunction: (String) -> Unit
 ) {
-
     try {
         val hostInterface = selectedConfig.second.hostInterface
 
@@ -28,7 +26,7 @@ suspend fun refreshHistory
 
         followers.forEach {
             currentUsers[it.acct] =
-                CurrentUser(following = false, follower = true, it.acct, it.username)
+                CurrentUser(following = false, follower = true, it.acct, it.username, it.id)
         }
 
         following.forEach {
@@ -42,17 +40,31 @@ suspend fun refreshHistory
                         following = true,
                         follower = false,
                         it.acct,
-                        it.username
+                        it.username,
+                        it.id
                     )
             }
         }
 
+        currentUsers.map { user -> user.value.userId ?: "" }
+            .chunked(50)
+            .forEachIndexed { index, string ->
+                feedbackFunction("Backing up notes... ($index)")
+            hostInterface.getUserRelationship(string).forEach { debug ->
+                println(debug.id +"- " +debug.note)
+            }
+            sleepAndCheck(isCancelled)
+        }
+
+        // TODO: Write history again
+        val x = 0
+        /*
         // Find user status from previous run
         val history = HistoryData(selectedConfig.first) // Read old history from file. History can contain multiple entries pr user
 
          // write out old and new history combined based on
         val newLines = history.writeHistory(currentUsers)
-        feedbackFunction("Imported lines : $newLines\n\n")
+        feedbackFunction("Imported lines : $newLines\n\n")*/
         delay(5000L)
     } catch (e : InterruptedException) {
         return

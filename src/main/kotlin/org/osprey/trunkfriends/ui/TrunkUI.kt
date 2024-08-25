@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
@@ -47,6 +49,7 @@ fun App(state: AppState) {
                 state.windowState.size.height.value.toInt()
             )
             View.MANAGE -> managementView(state)
+            View.NOTES -> noteView()
             View.ABOUT -> aboutView()
             View.PASTE_BAG -> pasteView(state.pasteBag)
             View.REFRESH -> refreshView(state)
@@ -107,7 +110,7 @@ fun ButtonRowHeader(state: AppState) {
             ) {
                 listOf(
                     View.ABOUT, View.LIST, View.HISTORY,
-                    View.REFRESH, View.MANAGE, View.NEW_TOKEN
+                    View.REFRESH, View.MANAGE, View.NOTES, View.NEW_TOKEN
                 ).forEach { view ->
                     if (view == View.ABOUT || state.selectedConfig != null)  {
                         CommonDropDownItem(text = view.title) {
@@ -202,16 +205,23 @@ fun main() = application {
     } as MutableList<Pair<String, Config>>
 
     val state = rememberWindowState(width = 800.dp, height = 750.dp)
+    val appState = AppState(configMap,state)
     val icon = painterResource("icon.png")
     Window(
         icon = icon,
         onCloseRequest = ::exitApplication,
+        onKeyEvent =  {
+            keyevent ->
+            println(keyevent.key)
+            if(keyevent.key == Key.T) appState.view = View.ADD_SERVER
+            true
+        } ,
         title = "Trunk Friends",
         state = state,
     ) {
         window.maximumSize = Dimension(850, 2000)
         window.minimumSize = Dimension(800, 600)
-        App(remember { AppState(configMap,state) })
+        App(remember { appState })
     }
 }
 

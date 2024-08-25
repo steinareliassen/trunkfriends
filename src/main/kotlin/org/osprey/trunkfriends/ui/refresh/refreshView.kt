@@ -149,6 +149,8 @@ fun refreshView(state: AppState, action: ManagementAction? = null) {
                                         backupOption.getOptions().forEach {
                                             key -> remove(key)
                                         }
+                                    } else {
+                                        remove((BackupOptions.EVERYTHING))
                                     }
                                 } else {
                                     add(backupOption)

@@ -4,6 +4,7 @@ import org.osprey.trunkfriends.api.*
 import org.osprey.trunkfriends.api.dto.FollowStatus
 import org.osprey.trunkfriends.api.dto.ListClass
 import org.osprey.trunkfriends.api.dto.UserClass
+import org.osprey.trunkfriends.api.dto.UserRelation
 import org.osprey.trunkfriends.config.Config
 import org.osprey.trunkfriends.handlers.sleepAndCheck
 import org.osprey.trunkfriends.util.mapper
@@ -15,7 +16,7 @@ import java.net.http.HttpResponse
 import kotlin.jvm.optionals.getOrNull
 
 class MastodonApi(
-    config : Config
+    config: Config
 ) : GenericHostInterface(config) {
 
     override fun getUserId() =
@@ -31,7 +32,7 @@ class MastodonApi(
             UserClass::class.java
         ).id
 
-    private fun lookupId(account : String) =
+    private fun lookupId(account: String) =
         mapper.readValue(
             HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder()
@@ -44,7 +45,7 @@ class MastodonApi(
             UserClass::class.java
         ).id
 
-    fun addRemoveFollower(follower: String, action: String) : FollowStatus =
+    fun addRemoveFollower(follower: String, action: String): FollowStatus =
         lookupId(follower).let { id ->
             mapper.readValue(
                 HttpClient.newHttpClient().send(
@@ -65,6 +66,7 @@ class MastodonApi(
                 FollowStatus::class.java
             )
         }
+
     override fun addFollower(follower: String) =
         addRemoveFollower(follower, "follow")
 
@@ -106,12 +108,16 @@ class MastodonApi(
 
     }
 
+    suspend fun postPrivateNote() {
+        // POST /api/v1/accounts/:id/note HTTP/1.1
+    }
+
     override suspend fun getFollow(
         userId: String,
         direction: Direction,
-        isCancelled : () -> Boolean,
+        isCancelled: () -> Boolean,
         feedbackFunction: (String) -> Unit
-    ) : List<UserClass> {
+    ): List<UserClass> {
         var start = 0L
         val follow = mutableListOf<UserClass>()
         do {
@@ -124,8 +130,8 @@ class MastodonApi(
         return follow
     }
 
-    private fun getUserRelationship(userIds : List<String>) {
-        val response = HttpClient
+    override suspend fun getUserRelationship(userIds: List<String>) =
+        HttpClient
             .newHttpClient()
             .send(
                 HttpRequest.newBuilder()
@@ -138,9 +144,14 @@ class MastodonApi(
                     .method("GET", HttpRequest.BodyPublishers.noBody())
                     .build(),
                 HttpResponse.BodyHandlers.ofString()
-            )
-        println(response.body())
-    }
+            ).run {
+                mapper.readValue(
+                    body(),
+                    Array<UserRelation>::class.java
+                ).filter { userRelation ->
+                    userRelation.note.trim().isNotEmpty()
+                }
+            }
 
     private fun findUserPage(start: Long, id: String, direction: Direction): Pair<Array<UserClass>, Long> {
         val startPoint = if (start != 0L) "?max_id=$start" else ""
@@ -155,8 +166,6 @@ class MastodonApi(
 
         val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString())
         val users = mapper.readValue(response.body(), Array<UserClass>::class.java)
-
-        getUserRelationship(users.map { id })
 
         val header = response.headers().firstValue("Link").getOrNull() ?: "empty"
         val startIndex = header.indexOf("max_id=")

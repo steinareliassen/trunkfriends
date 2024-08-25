@@ -9,6 +9,7 @@ enum class View(
     HISTORY("History Overview"),
     LIST("Follower Overview"),
     MANAGE("Manage followers"),
+    NOTES("Manage notes"),
     ABOUT("About"),
     REFRESH("Refresh followers"),
     EXECUTE_MANAGEMENT("Execute management actions"),
