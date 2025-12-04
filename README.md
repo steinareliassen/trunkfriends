@@ -1,4 +1,4 @@
-# Trunkfriends
+# TrunkFiends
 
 ## Important Information
 
@@ -27,19 +27,11 @@ Given that I had a few other issues with some shortcomings of the Mastodon UI
 in regard to how the friends UI is working, I thought I could combine the ideas
 into one app that may be helpful.
 
-## Installing Trunkfriends
-
-[Installing from source](docs/installing_source.md)
-
-Installation packages will be added shortly.
-
 ## Backing up Trunkfriends data
 
 Without previous fetches, Trunkfriends is not very helpful.
 
-Trunkfriends stores all it's data in a folder on your home directory, ".trunkfriends"
-
-Backup this folder every now and then, and keep it safe on another harddrive or in the cloud.
+Data needs to be be exported as a backup frequently enough for you to be comfortable.
 
 ## Using Trunkfriends
 

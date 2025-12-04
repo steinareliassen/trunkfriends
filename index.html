@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>QuoteMe!</title>
+        <script type="module" src="/priv/static/quoteme.mjs"></script>
+        <style>
+            .center {
+                margin: auto;
+                width: 50%;
+                border: 3px solid green;
+                padding: 10px;
+            }
+
+            .centernb {
+                margin: auto;
+                width: 50%;
+                border: 3px solid green;
+                padding: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="quoteme" class="centernb"></div>
+        <div class="center">
+            <p>
+                Early verison of this application, currently usable for setting
+                updating posts to have "who can quote" set to "anyone". Update
+                will be done in batches of 20 posts at the time. The app will be
+                expanded to make it possible to modify other parts of the your
+                post history, and have more fine grained options for selecting
+                what posts to process.
+            </p>
+            <p>
+                This functionality will be integrated into the
+                <a href="https://mastodon.social/@trunkfriends">Trunkfriends</a>
+                application, as part of the rewrite to Gleam/Javascript (the
+                desktop app is no longer maintained, and the Gleam app is in
+                early development stage)
+            </p>
+            <p>
+                This is a client-side-only application, the token used to
+                process the posts, is only stored in the browser during this
+                sessions. The only communication is between your browser, and
+                the mastodon instance you use.
+            </p>
+            <p>
+                It is, regardless, a good idea to delete the token that was
+                created during the session. This is done in the preferences
+                section on your mastodon instance, under Account -> Authorized
+                Apps. The tokens used by this app will have the name
+                "quoteupdate".
+            </p>
+            <p>
+                The source is freely availabe, and can be built and run locally
+                using docker.
+            </p>
+            <p>
+                <a href="https://github.com/steinareliassen/quoteme">
+                    https://github.com/steinareliassen/quoteme
+                </a>
+                - Docker file can be used to both build the project and create
+                runnable image
+            </p>
+        </div>
+    </body>
+</html>
