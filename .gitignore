@@ -1,5 +1,5 @@
 manifest.toml
-/priv/static/*.min.mjs
+/priv/static/*.mjs
 /build
 /priv/static/build
 # ---> Erlang
