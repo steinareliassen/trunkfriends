@@ -54,56 +54,53 @@ pub fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 }
 
 pub fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("centernb")], [
-    case model {
-      DisplayStatus(text) -> text_paragraph(text)
+  html.div([attribute.class("centernb")], case model {
+    DisplayStatus(text) -> [html.text(text)]
 
-      DisplayError(error, message) -> {
-        html.div([], [
-          html.h2([], [html.text("Something went wrong.")]),
-          text_paragraph(message),
-          html.h3([], [html.text("Error message:")]),
-          text_paragraph(error),
-        ])
-      }
+    DisplayError(error, message) -> {
+      [
+        html.h2([], [html.text("Something went wrong.")]),
+        html.text(message),
+        html.h3([], [html.text("Error message:")]),
+        html.text(error),
+      ]
+    }
 
-      ProcessPosts(session, list, results, max_id) -> {
-        html.div([], [
-          keyed.div(
-            [],
-            list.append(
-              list.map(list, fn(status) { #(status.id, status_line(status)) }),
-              list.map(results, fn(status) {
-                case status {
-                  Ok(status) -> #(status.id, status_line(status))
-                  Error(error) -> #(
-                    error,
-                    html.text("Something went wrong: " <> error),
-                  )
-                }
-              }),
-            ),
+    ProcessPosts(session, list, results, max_id) -> {
+      [
+        keyed.div(
+          [],
+          list.append(
+            list.map(list, fn(status) { #(status.id, status_line(status)) }),
+            list.map(results, fn(status) {
+              case status {
+                Ok(status) -> #(status.id, status_line(status))
+                Error(error) -> #(
+                  error,
+                  html.text("Something went wrong: " <> error),
+                )
+              }
+            }),
           ),
-          case results {
-            [] ->
-              button_text_paragraph(
-                "The posts above are ready to be processed",
-                "Process these posts?",
-                FetchPages(
-                  session:,
-                  result: list,
-                  response: results,
-                  max_id: max_id,
-                  process: True,
-                ),
-              )
-            _ -> element.none()
-          },
-        ])
-      }
-    },
-    html.div([attribute.class("centernb")], []),
-  ])
+        ),
+        case results {
+          [] ->
+            button_text_paragraph(
+              "The posts above are ready to be processed",
+              "Process these posts?",
+              FetchPages(
+                session:,
+                result: list,
+                response: results,
+                max_id: max_id,
+                process: True,
+              ),
+            )
+          _ -> element.none()
+        },
+      ]
+    }
+  })
 }
 
 fn status_line(status: Status) -> Element(Msg) {
