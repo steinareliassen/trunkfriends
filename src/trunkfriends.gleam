@@ -193,16 +193,12 @@ fn view(model: Model) -> Element(Msg) {
             }),
           ),
           html.div([], [
-            html.form([], [
-              html.input([
-                // A "controlled" input has both its `"value"` attribute set and a handler
-                // for `"input"` events. This way it is always in sync with your model.
-                attribute.value(restored),
-                event.on_input(RestoreMsg),
-              ]),
-              html.button([event.on_click(DoRestoreMsg(restored))], [
-                html.text("Restore server"),
-              ]),
+            html.input([
+              attribute.value(restored),
+              event.on_input(RestoreMsg),
+            ]),
+            html.button([event.on_click(DoRestoreMsg(restored))], [
+              html.text("Restore server"),
             ]),
           ]),
         ])

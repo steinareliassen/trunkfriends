@@ -1,11 +1,5 @@
+import api/auth.{fetch_client_info, fetch_token, fetch_user_info}
 import common/session
-import gleam/dynamic/decode
-import gleam/fetch
-import gleam/fetch/form_data
-import gleam/http
-import gleam/http/request
-import gleam/javascript/promise
-import gleam/json
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
@@ -38,15 +32,15 @@ pub fn update(
       effect.none(),
     )
     RegisterClient(domain) -> {
-      #(Domain(domain), wrap_up(effect.from(fetch_domain(domain, _)), wrapper))
+      wrap_up(
+        effect.from(fetch_client_info(domain, FetchClientInfo, ProcessError, _)),
+        wrapper,
+      )
+      #(Domain(domain), effect.none())
     }
 
-    FetchClientInfo(domain, result) -> #(
-      case result {
-        Ok(#(client_id, secret)) -> ClientInfo(domain:, client_id:, secret:)
-        Error(error) ->
-          DisplayError(error:, message: "Error fetching client info")
-      },
+    FetchClientInfo(domain, client_id, secret) -> #(
+      ClientInfo(domain:, client_id:, secret:),
       effect.none(),
     )
 
@@ -58,40 +52,40 @@ pub fn update(
           <> ", now fetching the your user_id, needed to update your posts",
         ),
         wrap_up(
-          effect.from(fetch_token(domain, client_id, secret, code, _)),
+          effect.from(fetch_token(
+            domain,
+            client_id,
+            secret,
+            code,
+            FetchTokenInfo,
+            ProcessError,
+            _,
+          )),
           wrapper,
         ),
       )
     }
 
-    FetchTokenInfo(domain, token) ->
-      case token {
-        Ok(token) -> #(
-          DisplayStatus("Done fetching token, fetching user info"),
-          wrap_up(effect.from(fetch_user_info(domain, token, _)), wrapper),
-        )
-        Error(error) -> #(
-          DisplayError(error:, message: "Error fetching token"),
-          effect.none(),
-        )
-      }
+    FetchTokenInfo(domain, token) -> #(
+      DisplayStatus("Done fetching token, fetching user info"),
+      wrap_up(
+        effect.from(fetch_user_info(
+          domain,
+          token,
+          FetchUserInfo,
+          ProcessError,
+          _,
+        )),
+        wrapper,
+      ),
+    )
 
-    FetchUserInfo(domain:, token:, result:) ->
-      case result {
-        Ok(user_id) -> #(
-          DisplayStatus("Got userinfo, fetching first set of pages..."),
-          effect.from(fn(dispatch) {
-            dispatch(giveback(session.Session(domain:, token:, user_id:)))
-          }),
-        )
-        Error(error) -> #(
-          DisplayError(
-            error:,
-            message: "Something went wrong fetching user info",
-          ),
-          effect.none(),
-        )
-      }
+    FetchUserInfo(domain:, token:, user_id:) -> #(
+      DisplayStatus("Got userinfo, fetching first set of pages..."),
+      effect.from(fn(dispatch) {
+        dispatch(giveback(session.Session(domain:, token:, user_id:)))
+      }),
+    )
 
     ProcessError(error:, message:) -> #(
       DisplayError(error:, message:),
@@ -252,140 +246,6 @@ fn view_input_with_secret(
   ])
 }
 
-pub fn fetch_domain(domain: String, dispatch) {
-  let response =
-    request.new()
-    |> request.set_host(domain)
-    |> request.set_path("/api/v1/apps")
-    |> request.set_method(http.Post)
-    |> request.set_body({
-      form_data.new()
-      |> form_data.append("client_name", "quoteupdate")
-      |> form_data.append("redirect_uris", "urn:ietf:wg:oauth:2.0:oob")
-      |> form_data.append("scopes", "read write")
-      |> form_data.append(
-        "website",
-        "https://github.com/steinareliassen/quoteupdate",
-      )
-    })
-    |> fetch.form_data_to_fetch_request
-    |> fetch.raw_send
-
-  promise.map_try(response, fn(a) { Ok(fetch.from_fetch_response(a)) })
-  |> promise.try_await(fetch.read_text_body)
-  |> promise.map(fn(response) {
-    let info = case response {
-      Ok(resp) -> {
-        let client_info_decoder = {
-          use client_id <- decode.field("client_id", decode.string)
-          use client_secret <- decode.field("client_secret", decode.string)
-          decode.success(#(client_id, client_secret))
-        }
-        case json.parse(from: resp.body, using: client_info_decoder) {
-          Ok(text) -> Ok(text)
-          Error(_) ->
-            Error(
-              resp.body
-              <> "Error parsing result. Was the domain you entered correct?",
-            )
-        }
-      }
-      Error(_) ->
-        Error(
-          "Error registering to use the service, was the domain name correct?",
-        )
-    }
-    dispatch(FetchClientInfo(domain, info))
-  })
-  Nil
-}
-
-pub fn fetch_user_info(domain: String, token: String, dispatch) {
-  request.new()
-  |> request.set_host(domain)
-  |> request.set_path("api/v1/accounts/verify_credentials")
-  |> request.set_method(http.Get)
-  |> request.set_header("Authorization", "Bearer " <> token)
-  |> fetch.send
-  |> promise.try_await(fetch.read_text_body)
-  |> promise.map(fn(response) {
-    let result = case response {
-      Ok(resp) -> {
-        let client_info_decoder = {
-          use access_token <- decode.field("id", decode.string)
-          decode.success(access_token)
-        }
-        case json.parse(from: resp.body, using: client_info_decoder) {
-          Ok(text) -> Ok(text)
-          Error(_) ->
-            Error(
-              resp.body
-              <> "Error parsing result. Was the domain you entered correct?",
-            )
-        }
-      }
-      Error(_) ->
-        Error(
-          "Error registering to use the service, was the domain name correct?",
-        )
-    }
-    dispatch(FetchUserInfo(domain:, token:, result:))
-  })
-  Nil
-}
-
-pub fn fetch_token(
-  domain: String,
-  client_id: String,
-  secret: String,
-  code: String,
-  dispatch,
-) {
-  let response =
-    request.new()
-    |> request.set_host(domain)
-    |> request.set_path("/oauth/token")
-    |> request.set_method(http.Post)
-    |> request.set_body({
-      form_data.new()
-      |> form_data.append("client_id", client_id)
-      |> form_data.append("client_secret", secret)
-      |> form_data.append("code", code)
-      |> form_data.append("redirect_uri", "urn:ietf:wg:oauth:2.0:oob")
-      |> form_data.append("scopes", "read write")
-      |> form_data.append("grant_type", "authorization_code")
-    })
-    |> fetch.form_data_to_fetch_request
-    |> fetch.raw_send
-
-  promise.map_try(response, fn(a) { Ok(fetch.from_fetch_response(a)) })
-  |> promise.try_await(fetch.read_text_body)
-  |> promise.map(fn(response) {
-    let token_result = case response {
-      Ok(resp) -> {
-        let client_info_decoder = {
-          use access_token <- decode.field("access_token", decode.string)
-          decode.success(access_token)
-        }
-        case json.parse(from: resp.body, using: client_info_decoder) {
-          Ok(text) -> Ok(text)
-          Error(_) ->
-            Error(
-              resp.body
-              <> "Error parsing result. Was the domain you entered correct?",
-            )
-        }
-      }
-      Error(_) ->
-        Error(
-          "Error registering to use the service, was the domain name correct?",
-        )
-    }
-    dispatch(FetchTokenInfo(domain, token_result))
-  })
-  Nil
-}
-
 pub opaque type Model {
   DomainField(String)
   Domain(String)
@@ -403,9 +263,9 @@ pub opaque type Msg {
   ProcessError(error: String, message: String)
   GiveCode(domain: String, client_id: String, secret: String, code: String)
   RegisterToken(domain: String, client_id: String, secret: String, code: String)
-  FetchClientInfo(domain: String, result: Result(#(String, String), String))
-  FetchTokenInfo(domain: String, result: Result(String, String))
-  FetchUserInfo(domain: String, token: String, result: Result(String, String))
+  FetchClientInfo(domain: String, client_id: String, secret: String)
+  FetchTokenInfo(domain: String, token: String)
+  FetchUserInfo(domain: String, token: String, user_id: String)
 }
 
 pub type Status {

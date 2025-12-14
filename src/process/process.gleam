@@ -28,7 +28,7 @@ pub fn default_model() {
 pub fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let #(model, effect) = case msg {
     Init(session) -> #(
-      DisplayStatus("Got userinfo, fetching first set of pages..."),
+      default_model(),
       effect.from(request_pages(session, option.None, _)),
     )
 
