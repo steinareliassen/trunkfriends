@@ -18,6 +18,10 @@ pub fn default_model() {
   DomainField("")
 }
 
+fn trans_effect(a: fn(fn(Msg) -> Nil) -> Nil, b: fn(Msg) -> a) {
+  effect.map(effect.from(a), b)
+}
+
 pub fn update(
   _: Model,
   message: Msg,
@@ -32,11 +36,13 @@ pub fn update(
       effect.none(),
     )
     RegisterClient(domain) -> {
-      wrap_up(
-        effect.from(fetch_client_info(domain, FetchClientInfo, ProcessError, _)),
-        wrapper,
+      #(
+        Domain(domain),
+        trans_effect(
+          fetch_client_info(domain, FetchClientInfo, ProcessError, _),
+          wrapper,
+        ),
       )
-      #(Domain(domain), effect.none())
     }
 
     FetchClientInfo(domain, client_id, secret) -> #(
@@ -51,8 +57,8 @@ pub fn update(
           <> domain
           <> ", now fetching the your user_id, needed to update your posts",
         ),
-        wrap_up(
-          effect.from(fetch_token(
+        trans_effect(
+          fetch_token(
             domain,
             client_id,
             secret,
@@ -60,7 +66,7 @@ pub fn update(
             FetchTokenInfo,
             ProcessError,
             _,
-          )),
+          ),
           wrapper,
         ),
       )
@@ -68,14 +74,8 @@ pub fn update(
 
     FetchTokenInfo(domain, token) -> #(
       DisplayStatus("Done fetching token, fetching user info"),
-      wrap_up(
-        effect.from(fetch_user_info(
-          domain,
-          token,
-          FetchUserInfo,
-          ProcessError,
-          _,
-        )),
+      trans_effect(
+        fetch_user_info(domain, token, FetchUserInfo, ProcessError, _),
         wrapper,
       ),
     )
@@ -92,10 +92,6 @@ pub fn update(
       effect.none(),
     )
   }
-}
-
-fn wrap_up(effect: Effect(Msg), wrapper: fn(Msg) -> a) {
-  effect.map(effect, fn(e) { wrapper(e) })
 }
 
 pub fn view(model: Model) -> Element(Msg) {

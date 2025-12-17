@@ -18,7 +18,6 @@ pub fn update(
   model: Model,
   message: Msg,
   wrapper: fn(Msg) -> a,
-  giveback: fn(session.Session) -> a,
 ) -> #(Model, Effect(a)) {
   case message {
     Init -> #(default_model(), effect.none())

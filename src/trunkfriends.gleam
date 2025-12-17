@@ -1,4 +1,4 @@
-import auth/auth.{type Model as AuthModel, type Msg as AuthMsg, text_paragraph}
+import auth.{type Model as AuthModel, type Msg as AuthMsg, text_paragraph}
 import common/session
 import gleam/dynamic/decode
 import gleam/json
@@ -10,7 +10,7 @@ import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
-import process/process.{type Model as ProcessModel, type Msg as ProcessMsg}
+import process.{type Model as ProcessModel, type Msg as ProcessMsg}
 
 pub fn main() {
   let assert Ok(_) =
@@ -33,6 +33,7 @@ type Msg {
   AboutMsg
   AuthWrapperMsg(AuthMsg)
   AuthResultMsg(session.Session)
+  RefreshFollowing
   ProcessWrapperMsg(ProcessMsg)
   RestoreMsg(String)
   DoRestoreMsg(String)
