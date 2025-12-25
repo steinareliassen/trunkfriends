@@ -11,6 +11,7 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import process.{type Model as ProcessModel, type Msg as ProcessMsg}
+import refresh.{type Model as RefreshModel, type Msg as RefreshMsg}
 
 pub fn main() {
   let assert Ok(_) =
@@ -25,6 +26,7 @@ type Model {
 type Section {
   AboutModel
   AuthModel(AuthModel)
+  RefreshModel(RefreshModel)
   ProcessModel(ProcessModel)
   BackupRestore(option.Option(String))
 }
@@ -33,7 +35,7 @@ type Msg {
   AboutMsg
   AuthWrapperMsg(AuthMsg)
   AuthResultMsg(session.Session)
-  RefreshFollowing
+  RefreshFollowingMsg(RefreshMsg)
   ProcessWrapperMsg(ProcessMsg)
   RestoreMsg(String)
   DoRestoreMsg(String)
@@ -78,6 +80,25 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         ]),
         effect.none(),
       )
+    }
+    RefreshFollowingMsg(msg) -> {
+      let servers = model.servers
+      let #(model, effect) = case model {
+        Model(servers, model) -> {
+          refresh.update(
+            case model {
+              RefreshModel(model) -> model
+              _ -> {
+                let assert Ok(server) = list.first(servers)
+                refresh.default_model(server)
+              }
+            },
+            msg,
+            RefreshFollowingMsg,
+          )
+        }
+      }
+      #(Model(servers, RefreshModel(model)), effect)
     }
     ProcessWrapperMsg(msg) -> {
       case model {
@@ -127,7 +148,27 @@ fn view(model: Model) -> Element(Msg) {
     html.button([event.on_click(AuthWrapperMsg(auth.default_msg()))], [
       html.text("Add server"),
     ]),
-
+    html.span([], case list.first(model.servers) {
+      Ok(session) -> {
+        [
+          html.button(
+            [event.on_click(RefreshFollowingMsg(refresh.default_msg(session)))],
+            [
+              html.text("Refresh followers"),
+            ],
+          ),
+          html.button(
+            [event.on_click(ProcessWrapperMsg(process.default_msg(session)))],
+            [
+              html.text("Process posts"),
+            ],
+          ),
+        ]
+      }
+      Error(_) -> {
+        [element.none()]
+      }
+    }),
     html.button([event.on_click(RestoreMsg(""))], [
       html.text("Backup/Restore"),
     ]),
@@ -172,6 +213,9 @@ fn view(model: Model) -> Element(Msg) {
 
       Model(_, ProcessModel(model)) ->
         element.map(process.view(model), fn(msg) { ProcessWrapperMsg(msg) })
+
+      Model(_, RefreshModel(model)) ->
+        element.map(refresh.view(model), fn(msg) { RefreshFollowingMsg(msg) })
 
       Model(servers, BackupRestore(restored)) -> {
         let restored = case restored {
