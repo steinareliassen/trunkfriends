@@ -1,17 +1,25 @@
 import auth.{type Model as AuthModel, type Msg as AuthMsg, text_paragraph}
 import common/session
 import gleam/dynamic/decode
+import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import history.{type Model as HistoryModel, type Msg as HistoryMsg}
 import lustre
 import lustre/attribute
 import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+import overview.{type Model as OverviewModel, type Msg as OverviewMsg}
 import process.{type Model as ProcessModel, type Msg as ProcessMsg}
 import refresh.{type Model as RefreshModel, type Msg as RefreshMsg}
+
+@external(javascript, "./ffi/export.ffi.mjs", "start")
+pub fn start() -> Int {
+  300
+}
 
 pub fn main() {
   let assert Ok(_) =
@@ -25,9 +33,12 @@ type Model {
 
 type Section {
   AboutModel
+  ErrorModel(String)
   AuthModel(AuthModel)
   RefreshModel(RefreshModel)
   ProcessModel(ProcessModel)
+  //HistoryModel(HistoryModel)
+  //OverviewModel(OverviewModel)
   BackupRestore(option.Option(String))
 }
 
@@ -37,7 +48,10 @@ type Msg {
   AuthResultMsg(session.Session)
   RefreshFollowingMsg(RefreshMsg)
   ProcessWrapperMsg(ProcessMsg)
+  //  HistoryMsg(HistoryMsg)
+  //OverviewMsg(OverviewMsg)
   RestoreMsg(String)
+  ErrorMsg(String)
   DoRestoreMsg(String)
 }
 
@@ -50,8 +64,10 @@ fn init(_) -> #(Model, Effect(Msg)) {
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  echo "updating!"
   case msg {
+    ErrorMsg(msg) -> {
+      #(Model(servers: model.servers, section: ErrorModel(msg)), effect.none())
+    }
     AuthWrapperMsg(msg) -> {
       case model {
         Model(servers, model) -> {
@@ -70,7 +86,11 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     AboutMsg -> {
-      #(Model(model.servers, section: AboutModel), effect.none())
+      let x = start()
+      #(
+        Model(model.servers, section: ErrorModel("x" <> int.to_string(x))),
+        effect.none(),
+      )
     }
     AuthResultMsg(session) -> {
       #(
@@ -119,7 +139,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       #(Model(model.servers, BackupRestore(option.Some(value))), effect.none())
     }
     DoRestoreMsg(value) -> {
-      echo "doing restore!"
       let session_decoder = {
         use domain <- decode.field("domain", decode.string)
         use token <- decode.field("token", decode.string)
@@ -130,7 +149,6 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         Ok(text) -> text
         Error(_) -> session.Session("error", "error", "error")
       }
-      echo "session " <> session.domain
       #(
         Model(
           [session, ..model.servers],
@@ -207,6 +225,8 @@ fn view(model: Model) -> Element(Msg) {
     },
     case model {
       Model(_, AboutModel) -> text_paragraph("About!")
+
+      Model(_, ErrorModel(s)) -> text_paragraph(s)
 
       Model(_, AuthModel(model)) ->
         element.map(auth.view(model), fn(msg) { AuthWrapperMsg(msg) })
