@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>QuoteMe!</title>
+    </head>
+
+    <body>
+        <a href="about:blank" id="backupfile"
+            >Click to download trunkfriends backup.</a
+        >
+        <script>
+            var a = document.getElementById("backupfile");
+            var file = new Blob(["file content goes here!"], {
+                type: "text/plain",
+            });
+            a.href = URL.createObjectURL(file);
+            a.download = "tfbackup_2026_01_01.json";
+        </script>
+    </body>
+</html>

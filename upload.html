@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Trunkfriends</title>
+    </head>
+
+    <body>
+        <input type="file" id="fileInput" />
+
+        <div id="fileInfo"></div>
+        <div id="textOutput"></div>
+        <script>
+            document
+                .getElementById("fileInput")
+                .addEventListener("change", function (event) {
+                    const file = event.target.files[0];
+
+                    const info = `File Name: ${file.name} <br> File Size: ${file.size} bytes<br> File Type: ${file.type}`;
+                    document.getElementById("fileInfo").innerHTML = info;
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        document.getElementById("textOutput").innerHTML =
+                            e.target.result;
+                    };
+                    reader.readAsText(file);
+                });
+        </script>
+    </body>
+</html>
