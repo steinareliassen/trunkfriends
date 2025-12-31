@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>QuoteMe!</title>
+        <style>
+            .center {
+                margin: auto;
+                width: 50%;
+                border: 3px solid green;
+                padding: 10px;
+            }
+
+            .centernb {
+                margin: auto;
+                width: 70%;
+                padding: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="app">
+            <script type="module">
+                import { getServers } from "./src/ffi/export.ffi.mjs";
+                import storeKey from "./src/ffi/export.ffi.mjs";
+                await storeKey();
+                console.log("TADA!");
+                const x = getServers();
+                console.log(x);
+                //                console.log("hei " + x.user_name);
+            </script>
+        </div>
+    </body>
+</html>
