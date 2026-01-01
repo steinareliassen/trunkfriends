@@ -16,9 +16,14 @@ import overview.{type Model as OverviewModel, type Msg as OverviewMsg}
 import process.{type Model as ProcessModel, type Msg as ProcessMsg}
 import refresh.{type Model as RefreshModel, type Msg as RefreshMsg}
 
-@external(javascript, "./ffi/export.ffi.mjs", "start")
-pub fn start() -> Int {
-  300
+@external(javascript, "./ffi/export.ffi.mjs", "getServers")
+pub fn get_servers() -> String {
+  "unknown"
+}
+
+@external(javascript, "./ffi/export.ffi.mjs", "storeServers")
+pub fn store_servers(_servers: String) -> String {
+  "unknown"
 }
 
 pub fn main() {
@@ -55,10 +60,28 @@ type Msg {
   DoRestoreMsg(String)
 }
 
+// a { 'domain':'tech.lgbt','token':'Bo3QGqFtDBfV9pBQKh6aVv3PlNdUcc','user_id','110802831960964358'}
 fn init(_) -> #(Model, Effect(Msg)) {
   let #(model, effect) = auth.init()
+  let value = get_servers()
+  let session_decoder = {
+    use domain <- decode.field("domain", decode.string)
+    use token <- decode.field("token", decode.string)
+    use user_id <- decode.field("user_id", decode.string)
+    decode.success(session.Session(domain:, token:, user_id:))
+  }
+  let session = case json.parse(from: value, using: session_decoder) {
+    Ok(text) -> {
+      echo "decode ok! "
+      [text]
+    }
+    Error(e) -> {
+      echo "decode not ok "
+      []
+    }
+  }
   #(
-    Model([], AuthModel(model)),
+    Model(session, AuthModel(model)),
     effect.map(effect, fn(msg) { AuthWrapperMsg(msg) }),
   )
 }
@@ -86,13 +109,23 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     AboutMsg -> {
-      let x = start()
+      //store_servers("Testing!")
+
       #(
-        Model(model.servers, section: ErrorModel("x" <> int.to_string(x))),
+        Model(model.servers, section: ErrorModel("x" <> get_servers())),
         effect.none(),
       )
     }
     AuthResultMsg(session) -> {
+      store_servers(
+        "{ \"domain\":\""
+        <> session.domain
+        <> "\",\"token\":\""
+        <> session.token
+        <> "\",\"user_id\":\""
+        <> session.user_id
+        <> "\"}",
+      )
       #(
         Model(section: BackupRestore(option.None), servers: [
           session,
