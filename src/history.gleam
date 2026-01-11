@@ -1,4 +1,3 @@
-import common/session
 import gleam/list
 import lustre/attribute
 import lustre/effect.{type Effect}

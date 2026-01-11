@@ -1,9 +1,7 @@
 import auth.{type Model as AuthModel, type Msg as AuthMsg, text_paragraph}
 import common/session
 import gleam/dynamic/decode
-import gleam/int
 import gleam/json
-import gleam/list
 import gleam/option
 import history.{type Model as HistoryModel, type Msg as HistoryMsg}
 import lustre
@@ -33,7 +31,7 @@ pub fn main() {
 }
 
 type Model {
-  Model(servers: List(session.Session), section: Section)
+  Model(server: option.Option(session.Session), section: Section)
 }
 
 type Section {
@@ -52,7 +50,7 @@ type Msg {
   AuthWrapperMsg(AuthMsg)
   AuthResultMsg(session.Session)
   RefreshFollowingMsg(RefreshMsg)
-  ProcessWrapperMsg(ProcessMsg)
+  ProcessMsg(ProcessMsg)
   //  HistoryMsg(HistoryMsg)
   //OverviewMsg(OverviewMsg)
   RestoreMsg(String)
@@ -60,7 +58,6 @@ type Msg {
   DoRestoreMsg(String)
 }
 
-// a { 'domain':'tech.lgbt','token':'Bo3QGqFtDBfV9pBQKh6aVv3PlNdUcc','user_id','110802831960964358'}
 fn init(_) -> #(Model, Effect(Msg)) {
   let #(model, effect) = auth.init()
   let value = get_servers()
@@ -73,11 +70,11 @@ fn init(_) -> #(Model, Effect(Msg)) {
   let session = case json.parse(from: value, using: session_decoder) {
     Ok(text) -> {
       echo "decode ok! "
-      [text]
+      option.Some(text)
     }
-    Error(e) -> {
+    Error(_e) -> {
       echo "decode not ok "
-      []
+      option.None
     }
   }
   #(
@@ -89,7 +86,7 @@ fn init(_) -> #(Model, Effect(Msg)) {
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   case msg {
     ErrorMsg(msg) -> {
-      #(Model(servers: model.servers, section: ErrorModel(msg)), effect.none())
+      #(Model(..model, section: ErrorModel(msg)), effect.none())
     }
     AuthWrapperMsg(msg) -> {
       case model {
@@ -109,10 +106,15 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     AboutMsg -> {
-      //store_servers("Testing!")
-
       #(
-        Model(model.servers, section: ErrorModel("x" <> get_servers())),
+        Model(
+          ..model,
+          section: ErrorModel(case model {
+            Model(option.Some(x), _) ->
+              "Server" <> x.domain <> " user " <> x.user_id
+            _ -> "WE DO NOT HAVE A SERVER!"
+          }),
+        ),
         effect.none(),
       )
     }
@@ -127,22 +129,18 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         <> "\"}",
       )
       #(
-        Model(section: BackupRestore(option.None), servers: [
-          session,
-          ..model.servers
-        ]),
+        Model(section: BackupRestore(option.None), server: option.Some(session)),
         effect.none(),
       )
     }
     RefreshFollowingMsg(msg) -> {
-      let servers = model.servers
+      let assert option.Some(server) = model.server
       let #(model, effect) = case model {
-        Model(servers, model) -> {
+        Model(_, model) -> {
           refresh.update(
             case model {
               RefreshModel(model) -> model
               _ -> {
-                let assert Ok(server) = list.first(servers)
                 refresh.default_model(server)
               }
             },
@@ -151,9 +149,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
           )
         }
       }
-      #(Model(servers, RefreshModel(model)), effect)
+
+      #(Model(option.Some(server), RefreshModel(model)), effect)
     }
-    ProcessWrapperMsg(msg) -> {
+    ProcessMsg(msg) -> {
       case model {
         Model(servers, model) -> {
           let #(model, effect) =
@@ -169,7 +168,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
     }
     RestoreMsg(value) -> {
-      #(Model(model.servers, BackupRestore(option.Some(value))), effect.none())
+      #(
+        Model(..model, section: BackupRestore(option.Some(value))),
+        effect.none(),
+      )
     }
     DoRestoreMsg(value) -> {
       let session_decoder = {
@@ -184,12 +186,26 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
       }
       #(
         Model(
-          [session, ..model.servers],
-          BackupRestore(option.Some("restored!")),
+          server: option.Some(session),
+          section: BackupRestore(option.Some("restored!")),
         ),
         effect.none(),
       )
     }
+  }
+}
+
+fn session_to_string(session: option.Option(session.Session)) {
+  case session {
+    option.Some(session) ->
+      "{ 'domain':'"
+      <> session.domain
+      <> "','token':'"
+      <> session.token
+      <> "','user_id','"
+      <> session.user_id
+      <> "'}"
+    _ -> "No server present!"
   }
 }
 
@@ -199,8 +215,8 @@ fn view(model: Model) -> Element(Msg) {
     html.button([event.on_click(AuthWrapperMsg(auth.default_msg()))], [
       html.text("Add server"),
     ]),
-    html.span([], case list.first(model.servers) {
-      Ok(session) -> {
+    html.span([], case model.server {
+      option.Some(session) -> {
         [
           html.button(
             [event.on_click(RefreshFollowingMsg(refresh.default_msg(session)))],
@@ -209,22 +225,22 @@ fn view(model: Model) -> Element(Msg) {
             ],
           ),
           html.button(
-            [event.on_click(ProcessWrapperMsg(process.default_msg(session)))],
+            [event.on_click(ProcessMsg(process.default_msg(session)))],
             [
               html.text("Process posts"),
             ],
           ),
         ]
       }
-      Error(_) -> {
+      option.None -> {
         [element.none()]
       }
     }),
     html.button([event.on_click(RestoreMsg(""))], [
       html.text("Backup/Restore"),
     ]),
-    case model.servers {
-      [] ->
+    case model.server {
+      option.None ->
         html.div([], [
           text_paragraph("Welcome to Trunkfriends."),
           text_paragraph(
@@ -265,31 +281,18 @@ fn view(model: Model) -> Element(Msg) {
         element.map(auth.view(model), fn(msg) { AuthWrapperMsg(msg) })
 
       Model(_, ProcessModel(model)) ->
-        element.map(process.view(model), fn(msg) { ProcessWrapperMsg(msg) })
+        element.map(process.view(model), fn(msg) { ProcessMsg(msg) })
 
       Model(_, RefreshModel(model)) ->
         element.map(refresh.view(model), fn(msg) { RefreshFollowingMsg(msg) })
 
-      Model(servers, BackupRestore(restored)) -> {
+      Model(session, BackupRestore(restored)) -> {
         let restored = case restored {
           option.Some(value) -> value
           option.None -> ""
         }
         html.div([], [
-          html.div(
-            [],
-            list.map(servers, fn(x) {
-              html.text(
-                "{ 'domain':'"
-                <> x.domain
-                <> "','token':'"
-                <> x.token
-                <> "','user_id','"
-                <> x.user_id
-                <> "'}",
-              )
-            }),
-          ),
+          html.div([], [html.text(session_to_string(session))]),
           html.div([], [
             html.input([
               attribute.value(restored),
