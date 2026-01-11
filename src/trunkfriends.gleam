@@ -133,6 +133,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
         effect.none(),
       )
     }
+
     RefreshFollowingMsg(msg) -> {
       let assert option.Some(server) = model.server
       let #(model, effect) = case model {
@@ -152,6 +153,7 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
 
       #(Model(option.Some(server), RefreshModel(model)), effect)
     }
+
     ProcessMsg(msg) -> {
       case model {
         Model(servers, model) -> {
@@ -162,11 +164,13 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
                 _ -> process.default_model()
               },
               msg,
+              ProcessMsg,
             )
-          #(Model(servers, ProcessModel(model)), effect.none())
+          #(Model(servers, ProcessModel(model)), effect)
         }
       }
     }
+
     RestoreMsg(value) -> {
       #(
         Model(..model, section: BackupRestore(option.Some(value))),

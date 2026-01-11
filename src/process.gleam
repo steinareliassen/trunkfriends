@@ -25,11 +25,11 @@ pub fn default_model() {
   DisplayStatus("Fetching pages")
 }
 
-pub fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
+pub fn update(_: Model, msg: Msg, wrapper: fn(Msg) -> a) -> #(Model, Effect(a)) {
   let #(model, effect) = case msg {
     Init(session) -> #(
       default_model(),
-      effect.from(request_pages(session, option.None, _)),
+      effect.map(effect.from(request_pages(session, option.None, _)), wrapper),
     )
 
     ProcessError(error:, message:) -> #(
@@ -40,12 +40,16 @@ pub fn update(_: Model, msg: Msg) -> #(Model, Effect(Msg)) {
     FetchPages(session:, result:, response:, process:, max_id:) -> #(
       ProcessPosts(session, result, response, max_id),
       case result {
-        [] -> effect.from(request_pages(session, max_id, _))
+        [] ->
+          effect.map(effect.from(request_pages(session, max_id, _)), wrapper)
         _ ->
           case process {
             False -> effect.none()
             True ->
-              effect.from(patch_status(session, result, response, max_id, _))
+              effect.map(
+                effect.from(patch_status(session, result, response, max_id, _)),
+                wrapper,
+              )
           }
       },
     )
