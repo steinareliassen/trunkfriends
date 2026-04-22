@@ -1,7 +1,8 @@
-manifest.toml
-/priv/static/*.mjs
-/build
-/priv/static/build
+/trunkf/manifest.toml
+/trunkf/priv/static/*.mjs
+/trunkf/build
+/trunkf/priv/static/build
+/trunkf/.lustre
 # ---> Erlang
 .eunit
 *.o
